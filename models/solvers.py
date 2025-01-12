@@ -1,9 +1,9 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 
-from models.parameters import MeatSimulationParameters
+from models.parameters import MeatSimulationParameters, LOG_REDUCTION_MIN_THRESHOLD
 
-def SimulateMeat(msp: MeatSimulationParameters)-> (np.ndarray, np.ndarray):
+def SimulateMeat(msp: MeatSimulationParameters)-> (np.ndarray, np.ndarray, int):
     """
     Simulate the heat transfer in meat using the parameters defined in msp.
     
@@ -19,6 +19,9 @@ def SimulateMeat(msp: MeatSimulationParameters)-> (np.ndarray, np.ndarray):
         np.ndarray: The time points at which the temperature was evaluated.
                     Shape (t,) where t is the time points.
                     t varies in np.linspace(0, msp.t_max, int(msp.t_max/msp.dt)+1) and is measured in seconds
+        int:        The instant (in seconds) at which thermal stability (i.e., Fluid temperature - 0.5°C has been reached).
+                    None if no thermal stability has been reached.
+
     """ 
 
     dr = msp.R / (msp.N - 1)  # Radial step size
@@ -56,10 +59,21 @@ def SimulateMeat(msp: MeatSimulationParameters)-> (np.ndarray, np.ndarray):
     # Extract the solution
     T_sol = solution.y
     time_points = solution.t
-    
-    return T_sol, time_points
 
-def LogReduction (center_temperature : np.ndarray)-> (float, list):
+    # Check whether thermal stability has been reached
+    threshold_temperature = msp.T_fluid - 0.5  # Threshold temperature
+    center_temperatures = T_sol[0, :]
+
+    # Find the first time where the center temperature exceeds the threshold
+    second_stability_reached = None
+    for i, temp in enumerate(center_temperatures):
+        if temp >= threshold_temperature:
+            second_stability_reached = time_points[i]
+            break
+
+    return T_sol, time_points, second_stability_reached
+
+def LogReduction_old (center_temperature : np.ndarray)-> (float, list):
     Dref = 2/6 # 2 minutes for 6-log reduction
     Tref = 70 # Reference temperature in °C
     z = 7.5 # Z-value in °C
@@ -79,3 +93,37 @@ def LogReduction (center_temperature : np.ndarray)-> (float, list):
     # Calculate the final LR
     LR = total_sum
     return LR, temporal_evolution
+
+def LogReduction (center_temperature : np.ndarray, dt : int)-> (float, list):
+    """
+    Parameters
+        np.ndarray:     Temperature at the center of the meat with a sample every dt (see next parameters)
+        int:            Temporal granularity of the simulation is seconds
+    
+    Returns:
+        float:          Overall Log-Reduction across the whole simulation
+        list:           List of cumulative Log-Reduction (with the same temporal granularity as input data)
+        safety_instant  Instant of the time (in seconds) when 6-log reduction has been reached
+    """
+    Dref = (2*60)/6 # 2 minutes for 6-log reduction (converted in seconds)
+    Tref = 70 # Reference temperature in °C
+    z = 7.5 # Z-value in °C
+
+    # Initialize the cumulative temporal_evolution array
+    temporal_evolution = []
+
+    # Initialize the running sum
+    total_sum = 0
+
+    # Loop through each temperature and calculate the contribution
+    for T_i in center_temperature:
+        contribution = 10 ** ((T_i - Tref) / z) * dt
+        total_sum += (1/Dref) * contribution
+        temporal_evolution.append(total_sum)  # Add the current total_sum to the array
+
+    # Calculate the final LR
+    LR = total_sum
+
+    safety_instant = next((i*dt for i, value in enumerate(temporal_evolution) if value > LOG_REDUCTION_MIN_THRESHOLD), None)
+
+    return LR, temporal_evolution, safety_instant

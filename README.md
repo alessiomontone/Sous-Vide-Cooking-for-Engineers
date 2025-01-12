@@ -1,6 +1,6 @@
 # Cooking For Engineers
 
-
+The simulation tool is based on the paper by Douglas E. Baldwin, _Sous vide cooking: A review, International Journal of Gastronomy and Food Science_, vol. 1(1), pp. 15–30 (2012). [Download PDF](https://douglasbaldwin.com/Baldwin-IJGFS-Preprint.pdf)
 
 # Mathematical basis
 
@@ -31,5 +31,4 @@ Where_
 
 ## Discrete version
 The above funcit
-
 

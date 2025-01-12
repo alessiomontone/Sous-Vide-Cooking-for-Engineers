@@ -1,4 +1,8 @@
 import json
+import pandas as pd
+import numpy as np
+
+LOG_REDUCTION_MIN_THRESHOLD = 6
 
 class MeatSimulationParameters:
     def __init__(self):
@@ -11,8 +15,8 @@ class MeatSimulationParameters:
         self.alpha = 1.11e-7                        # Thermal diffusivity in m^2/s
         self.k = 0.48                               # Thermal conductivity in W/(m·K)
         self.h = 95                                 # Convective heat transfer coefficient in W/(m^2·K)
-        self.N = 30                                 # Number of radial points
-        self.dt = 60  # Time step in seconds
+        self.N = 30                                 # Spatial Simulation Granularity: number of radial points used to solve the equations 
+        self.dt = 60                                # Simulation Granularity: Time step in seconds used for equation evalution/solve
 
     # Geometry properties
     ####
@@ -68,7 +72,15 @@ class MeatSimulationParameters:
     def t_max(self): # Maximum simulation time in seconds
         return self.simulation_hours * 3600
     
-    # Helpeft functions
+    @property
+    def r_values(self):
+        return np.linspace(0, self.R, self.N)
+    
+    @property
+    def thermal_stability_threshold(self):
+        return self.T_fluid - 0.5
+
+    # Helper functions
     ####
     
     def to_dict(self):
@@ -90,3 +102,6 @@ class MeatSimulationParameters:
     def to_json(self):
         import json
         return json.dumps(self.to_dict(), indent=4)
+
+    def to_dataframe(self) -> pd.DataFrame:
+        return pd.DataFrame(list(self.to_dict().items()), columns=["Key", "Value"])

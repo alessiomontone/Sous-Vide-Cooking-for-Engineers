@@ -75,27 +75,10 @@ if st.button("Run Simulation"):
     for index, a in enumerate(alphas):
         msp.alpha = a
     
-        T_sol, time_points = SimulateMeat(msp)
-        center_temperatures = T_sol[0, :]  # First row corresponds to T[0] (r = 0)
+        T_sol, time_points, stability_instant = SimulateMeat(msp)
         
-        # Prepare data for Streamlit line_chart
-        time_points_minutes = time_points / 60  # Convert seconds to minutes
-        r = np.linspace(0, msp.R, msp.N)  # Radial points from 0 to R
-        
-        ######## Display the temporal evolution of the Center
-        #####################################################
-        # Extract the temperature at the center of the cylinder (r = 0)
-        threshold_temperature = roner_termperature - 0.5  # Threshold temperature
-
-        # Find the first time where the center temperature exceeds the threshold
-        minute_reached = None
-        for i, temp in enumerate(center_temperatures):
-            if temp >= threshold_temperature:
-                minute_reached = time_points_minutes[i]
-                break
-        
-        if minute_reached is not None:
-                results.append({"Diffusivity": a, "Heating time": minute_reached})
+        if stability_instant is not None:
+            results.append({"Diffusivity": a, "Heating time": stability_instant/60})
         
         progress_percentage = int((index + 1) / len(alphas) * 100)
         progress_bar.progress(progress_percentage)
@@ -126,8 +109,8 @@ if st.button("Run Simulation"):
             x=0.5,  # Center the title horizontally
             xanchor="center",  # Ensure proper alignment
         ),
-        xaxis_title="Parameter Value",
-        yaxis_title="Time to Stability (seconds)",
+        xaxis_title="Thermal Diffusivity (α)",
+        yaxis_title="Time to Thermal Stability (minutes)",
         template="plotly_white",
         hovermode="closest",
     )

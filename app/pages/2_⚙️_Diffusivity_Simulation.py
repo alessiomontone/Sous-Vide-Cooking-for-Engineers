@@ -22,12 +22,12 @@ st.title("⚙️ Diffusivity Simulation")
 
 st.sidebar.header("⚙️ Parameters")
 
-st.sidebar.subheader("Simulations")
+st.sidebar.subheader("Diffusivity Range")
 start_thermal_diffusivity = st.sidebar.number_input("[α] Start Thermal Diffusivity (e-7 m²/s):", value=1.11, step=0.01, format="%.2f")
 end_thermal_diffusivity = st.sidebar.number_input("[α] End Thermal Diffusivity (e-7 m²/s):", value=1.41, step=0.01, format="%.2f")
 num_simulations = st.sidebar.number_input("Simulations (#):", value=5, step=1)
 
-st.sidebar.subheader("Meat")
+st.sidebar.subheader("Meat characteristics")
 thickness = st.sidebar.number_input("Thickness (mm):", value=20, step=5)
 
 shape_options = {
@@ -37,21 +37,17 @@ shape_options = {
 }
 shape = shape_options[st.sidebar.selectbox("Shape:", shape_options.keys())]
 
-
-st.sidebar.subheader("Temperatures")
 initial_temperature = st.sidebar.number_input("Initial Temperature (°C):", value=5.0, step=0.5, format="%.1f")
 roner_termperature = st.sidebar.number_input("Roner Temperature (°C):", value=58.0, step=0.5, format="%.1f")
 
-st.sidebar.subheader("Timing")
-final_time = st.sidebar.number_input("Simulation Time (h):", value=5, step=1)
-
 with st.sidebar.expander("Advanced"):
+    final_time = st.number_input("Simulation Time (h):", value=5, step=1)
     # thermal_diffusivity = st.number_input("[α] Thermal Diffusivity (e-7 m²/s):", value=1.11, step=0.01, format="%.2f")
     heat_transfer = st.number_input("[h] Surface Heat Transfer Coefficient (W/m²-K):", value=100, step=1)
     thermal_conductivity = st.number_input("[k] Thermal Conductivity (W/m-K):", value=0.48, step=0.01, format="%.2f")
 
 # Display Simulation results
-if st.button("Run Simulation"):
+if st.sidebar.button("Run Simulation"):
 
     # with st.spinner("Running simulation..."):
     progress_bar = st.progress(0)

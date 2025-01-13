@@ -18,7 +18,7 @@ _Thermophysical Properties of Meat Products: General Bibliography and Experiment
 
 # Mathematical basis
 
-All the modeling is based on the thermal exchange equation in cylindric coordinates
+All the modeling is based on the thermal exchange equation in cylindric coordinates:
 
 $$ 
 \begin{cases}
@@ -30,12 +30,13 @@ $$
  
 Where: 
 * $r \in [0,R]$, representing the distance from the center of the food $0$ is the center, $R$ is the border at direct contect with the water
-* $ T_0 $, is the initial temprature of the food, generally 5°C  
+* $T_0$, is the initial temprature of the food, generally 5°C  
 * $T(r,t)$, representing the temperature of the food at distance $r$ from the center at time $t$
-* $ \beta $, representing the geometry of the shape ($0$ for slab, $1$ for cylinder and $2$ for sphere)
-* $ T_{\text{Water}} $, representing the temperature set and maintained by the Roner
+* $\beta$, representing the geometry of the shape ($0$ for slab, $1$ for cylinder and $2$ for sphere)
+* $T_{\text{Water}} $, representing the temperature set and maintained by the Roner
 
-Furthermore, the reduction of the pathogens the Logaritmic Reduction (LR) is computed as follows
+Furthermore, the reduction of the pathogens the Logaritmic Reduction (LR) is computed as follows:
+
 $$
 \text{LR} = \frac{1}{D_{\text{Ref}}} \int_0^t 10^{\frac{T(t') - T_{\text{Ref}}}{z}} \, dt',
 $$

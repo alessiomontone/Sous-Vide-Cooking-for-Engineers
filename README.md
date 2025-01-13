@@ -42,7 +42,7 @@ $$
 $$
 
 Where_
-* $D_{\text{Ref}}$ is equal to $ [\bullet] $ 
+* $D_{\text{Ref}}$ is equal to $[\bullet]$ 
 
 ## Discrete version
 The above funcit

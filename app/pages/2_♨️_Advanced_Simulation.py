@@ -15,7 +15,7 @@ st.set_page_config(
     page_icon="♨️",
 )
 
-st.title("♨️ Cooking Simulation")
+st.title("♨️ Advanced Simulation")
 
 ## Sidebar - Input parameters for the simulation
 ################################################

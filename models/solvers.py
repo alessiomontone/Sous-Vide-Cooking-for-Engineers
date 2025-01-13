@@ -73,27 +73,6 @@ def SimulateMeat(msp: MeatSimulationParameters)-> (np.ndarray, np.ndarray, int):
 
     return T_sol, time_points, second_stability_reached
 
-def LogReduction_old (center_temperature : np.ndarray)-> (float, list):
-    Dref = 2/6 # 2 minutes for 6-log reduction
-    Tref = 70 # Reference temperature in °C
-    z = 7.5 # Z-value in °C
-
-    # Initialize the cumulative temporal_evolution array
-    temporal_evolution = []
-
-    # Initialize the running sum
-    total_sum = 0
-
-    # Loop through each temperature and calculate the contribution
-    for T_i in center_temperature:
-        contribution = 10 ** ((T_i - Tref) / z)
-        total_sum += (1/Dref) * contribution
-        temporal_evolution.append(total_sum)  # Add the current total_sum to the array
-
-    # Calculate the final LR
-    LR = total_sum
-    return LR, temporal_evolution
-
 def LogReduction (center_temperature : np.ndarray, dt : int)-> (float, list):
     """
     Parameters

@@ -11,7 +11,7 @@ class MeatSimulationParameters:
         
         self.T_fluid = 58.0                         # Fluid temperature in °C
         self.T_initial = 5.0                        # Initial temperature of the cylinder in °C
-        self.simulation_hours = 7                   # Simulation time in hours
+        self.simulation_hours = 4                   # Simulation time in hours
         self.alpha = 1.11e-7                        # Thermal diffusivity in m^2/s
         self.k = 0.48                               # Thermal conductivity in W/(m·K)
         self.h = 95                                 # Convective heat transfer coefficient in W/(m^2·K)

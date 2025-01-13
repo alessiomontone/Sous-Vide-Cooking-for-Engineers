@@ -39,10 +39,11 @@ Where:
 Furthermore, the reduction of the pathogens the Logaritmic Reduction (LR) is computed as follows:
 
 $$
-\text{LR} = \frac{1}{D_{\text{Ref}}} \int_0^t 10^{\frac{T(t') - T_{\text{Ref}}}{z}} \, dt', \tag{**}
+\text{LR} = \frac{1}{D_{\text{Ref}}} \int_0^t 10^{\frac{T(t') - T_{\text{Ref}}}{z}} dt', \tag{**}
 $$
 
-Where_
+Where
+
 * $D_{\text{Ref}}$ is equal to $20s^{-1}$  
 
 ## Discrete version

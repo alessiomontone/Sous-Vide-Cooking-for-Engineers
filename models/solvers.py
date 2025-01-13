@@ -33,7 +33,6 @@ def SimulateMeat(msp: MeatSimulationParameters)-> (np.ndarray, np.ndarray, int):
         dTdt = np.zeros_like(T)
         
         # Symmetry condition at r = 0
-        #dTdt[0] = alpha * (T[1] - T[0]) / dr**2
         dTdt[0] = msp.alpha * (2 / dr**2) * (T[1] - T[0])
 
         # Interior points

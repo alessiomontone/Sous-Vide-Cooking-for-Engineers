@@ -16,4 +16,4 @@ _Thermophysical Properties of Meat Products: General Bibliography and Experiment
 
 ## Details
 Further details, including mathematical continuous and discrete formalization, can be find in the documentaion
-Mathematical details besides the implementation is provided in the [documentation](docs/build/index.html)
+Mathematical details besides the implementation is provided in the [documentation](docs/build/html/index.html)

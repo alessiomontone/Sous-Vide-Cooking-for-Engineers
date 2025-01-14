@@ -4,4 +4,6 @@ scipy
 matplotlib
 plotly
 ipykernel
+sphinx
+sphinx-rtd-theme
 streamlit

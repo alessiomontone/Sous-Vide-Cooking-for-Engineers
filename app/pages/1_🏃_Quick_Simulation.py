@@ -19,12 +19,12 @@ st.set_page_config(
     page_icon="♨️",
 )
 
-st.title("♨️ Quick Simulation")
+st.title("🏃 Quick Simulation")
 
 ## Sidebar - Input parameters for the simulation
 ################################################
 
-st.sidebar.header("♨️ Parameters")
+st.sidebar.header("🏃 Parameters")
 
 thickness = st.sidebar.number_input("Thickness (mm):", value=20, step=5)
 
@@ -33,9 +33,9 @@ shape_options = {
     "🍖 Cylinder": "cylinder",
     "🟤 Sphere": "sphere"
 }
-shape = shape_options[st.sidebar.selectbox("Shape:", shape_options.keys())]
+shape = shape_options[st.sidebar.selectbox("Shape:", shape_options.keys(), help="The shape of the piece of the meat that is being cooked")]
 
-start_hhmm = st.sidebar.time_input("Starting time (h:mm):", value=time(9, 00))
+start_hhmm = st.sidebar.time_input("Starting time (h:mm):", value=time(9, 00), help="The time of the day at which the cooking is expected to start")
 
 initial_temperature = st.sidebar.number_input("Food Initial Temperature (°C):", value=5.0, step=0.5, format="%.1f")
 
@@ -79,11 +79,15 @@ if st.sidebar.button("Run Simulation"):
     
 
     # Display the result
-    if hhmm_stability_reached is not None:
-        st.info(f"The piece of meat reaches thermal stability (i.e., 0.5°C below the final temperature) at approximately {hhmm_stability_reached:%H:%M}")
+    if hhmm_safety_reached is not None:
+        st.success(f"If cooking starts at {start_hhmm:%H:%M}, food can be **safely consumed starting from {hhmm_safety_reached:%H:%M}**✔️")
     else:
-        st.info("The center does not reach 0.5°C below the final temperature within the simulated time.")
-
+        st.error("No safety level reached in reasonable time")
+        
+    if hhmm_stability_reached is None:
+        st.info("No stable temperature reached in reasonable time")
+        
+    
     # Create the Plotly figure
     fig = go.Figure()
 
@@ -107,7 +111,7 @@ if st.sidebar.button("Run Simulation"):
             x=[hhmm_stability_reached],
             y=[thermal_stability_threshold],
             mode='markers+text',
-            name=f"Thermal stability",
+            name=f"Stable temperature",
             marker=dict(color='yellow', symbol='circle', size=20),
             text=f"<b>{hhmm_stability_reached:%H:%M}</b>",
             textposition="bottom center"
@@ -119,7 +123,7 @@ if st.sidebar.button("Run Simulation"):
             x=[hhmm_safety_reached],
             y=[thermal_stability_threshold],
             mode='markers+text',
-            name=f"Safety level reached",
+            name=f"Safety level reached (Pasteurization)",
             marker=dict(color='green', symbol='circle-dot', size=20),
             text=f"<b>{hhmm_safety_reached:%H:%M}</b>",
             textposition="top center"
@@ -142,13 +146,13 @@ if st.sidebar.button("Run Simulation"):
             y=[None],
             mode='markers',
             marker=dict(size=10, color='green', symbol='square', opacity=0.3),
-            name='Safety Area'
+            name='Safety time interval'
         ))
   
     # Update the layout
     fig.update_layout(
         title=dict(
-            text="Temporal Variation of Temperature at the meat center",
+            text="🌡️ Temperature at the 🎯 center of the food",
             x=0.5,  # Center the title
             xanchor="center",  # Align the title anchor to the center,
             font=dict(
@@ -161,10 +165,19 @@ if st.sidebar.button("Run Simulation"):
             dtick=15*60*1000,               # Interval for ticks (30 minutes)
             tickformat="%H:%M"        # Format tick labels to show integers only
         ),
-        yaxis=dict(title="Temperature in the center (°C)"),
+        yaxis=dict(title="Temperature (°C)"),
         legend=dict(title="Legend")
     )
     
     # Render the Plotly figure in Streamlit
     st.plotly_chart(fig, use_container_width=True)
+    
+    st.markdown("Simulation parameters here 👉", help=f"```{msp.to_monospace_str()}```")
+    
+else:
+    st.write("Here you can rapidly simulate sous vide cooking, just choose the parameters from the sidebar on the left of the page.")
+    st.write(" The simulation will show you the temperature evolution at the center of the meat and when the food can be safely consumed.")
+    
+    
+    
     

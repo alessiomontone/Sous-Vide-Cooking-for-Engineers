@@ -98,6 +98,22 @@ class MeatSimulationParameters:
             "t_max": self.t_max,
             "dt": self.dt
         }
+        
+    def to_monospace_str(self):
+        return f"""
+Thickness           = {self.Thickness}
+Beta                = {self.Beta}
+T Initial           = {self.T_initial}
+T Roner             = {self.T_fluid}
+Simulation time (h) = {self.simulation_hours}
+Diffusivity (alpha) = {self.alpha}
+Conductivity (k)    = {self.k}
+Surface Heat t. (h) = {self.h}
+#Spatial points (N) = {self.N}
+Radius of food (R)  = {self.R}
+Simulated seconds   = {self.t_max}
+Smallest time int.  = {self.dt}
+"""
 
     def to_json(self):
         import json

@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 from models.parameters import MeatSimulationParameters, LOG_REDUCTION_MIN_THRESHOLD
 from models.solvers import SimulateMeat
 from models.solvers import LogReduction
+from models.helpers import seconds_to_hhmm
 
 # Allow acces to the models 
 import sys
@@ -73,11 +74,9 @@ if st.sidebar.button("Run Simulation"):
             for curr_thickness in range (thickness[0], thickness[1]+1, 5):
                 msp.define_meat_shape(shape=shape,thickness_mm=curr_thickness)
                 T_sol, time_points, second_stability_reached = SimulateMeat(msp)
-                hours, remainder = divmod(second_stability_reached, 3600)
-                minutes = remainder // 60
-                str_timestamp = f"{int(hours)}:{int(minutes):02d}"
-                st.toast(f"Simulation for {curr_thickness}mm completed and thermal stability found at {str_timestamp}", icon="ℹ️")
-                result.append({"Thickness (mm)": curr_thickness, "Time (h:mm)": f"{str_timestamp}"})
+                
+                st.toast(f"Simulation for {curr_thickness}mm completed and thermal stability found at {seconds_to_hhmm(second_stability_reached)}", icon="ℹ️")
+                result.append({"Thickness (mm)": curr_thickness, "Time (h:mm)": f"{seconds_to_hhmm(second_stability_reached)}"})
             
             st.write("Estimated heating time:")
             st.dataframe(pd.DataFrame(result))

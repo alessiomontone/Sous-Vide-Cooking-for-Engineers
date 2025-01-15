@@ -3,6 +3,12 @@ import numpy as np
 from matplotlib import colormaps
 from matplotlib.colors import Normalize
 import plotly.graph_objects as go
+from datetime import datetime
+
+from models.solvers import SimulateMeat
+from models.solvers import LogReduction
+from models.helpers import seconds_to_mmss, seconds_to_hhmm
+from models.parameters import MeatSimulationParameters, LOG_REDUCTION_MIN_THRESHOLD
 
 # Allow acces to the models 
 import sys
@@ -24,60 +30,74 @@ st.sidebar.header("♨️ Parameters")
 
 thickness = st.sidebar.number_input("Thickness (mm):", value=20, step=5)
 
+if thickness < 10:
+    st.sidebar.info("Short (<2h) simulation time suggested for small thicknesses.")
+
 shape_options = {
     "🥩 Slab": "slab",
     "🍖 Cylinder": "cylinder",
     "🟤 Sphere": "sphere"
 }
 shape = shape_options[st.sidebar.selectbox("Shape:", shape_options.keys())]
-
+if shape == "slab":
+        correct_beta_for_large_slabs = st.sidebar.checkbox(label="Correct Beta for large values of thickenss", value = True, 
+                                                       help="For computaton of Table 2 in Baldwin's paper it has been used")
+else:
+    correct_beta_for_large_slabs = None
 initial_temperature = st.sidebar.number_input("Food Initial Temperature (°C):", value=5.0, step=0.5, format="%.1f")
-
 roner_termperature = st.sidebar.number_input("Roner Temperature (°C):", value=58.0, step=0.5, format="%.1f")
-
-#with st.sidebar.expander("Advanced"):
 final_time = st.sidebar.number_input("Simulation Time (h):", value=5, step=1)
 
 meattype_options = {
     "🐄 Beef": "beef",
+    "🐖 Pork": "pork",
     "🐔 Poultry": "poultry",
-    "🐟 Fish": "fish"
+    "🐟 Fish": "fish",
+    "Other": "other"
 }
 meattype = meattype_options[st.sidebar.selectbox("Meat type:", meattype_options.keys())]
 if meattype == "beef":
-    thermal_diffusivity = st.sidebar.slider("[α] Thermal Diffusivity (10⁻⁷ m²/s):", min_value=1.10, max_value=1.80, value=1.11, step=0.01, format="%.2f")
+    thermal_diffusivity = st.sidebar.slider("[α] Thermal Diffusivity (10⁻⁷ m²/s):", min_value=1.11, max_value=1.30, value=1.11, step=0.01, format="%.2f")
+elif meattype == "pork":
+    thermal_diffusivity = st.sidebar.slider("[α] Thermal Diffusivity (10⁻⁷ m²/s):", min_value=1.17, max_value=1.25, value=1.17, step=0.01, format="%.2f")
 elif meattype == "poultry":
-    thermal_diffusivity = st.sidebar.slider("[α] Thermal Diffusivity (10⁻⁷ m²/s):", min_value=1.30, max_value=1.80, value=1.31, step=0.01, format="%.2f")
+    thermal_diffusivity = st.sidebar.slider("[α] Thermal Diffusivity (10⁻⁷ m²/s):", min_value=1.08, max_value=1.39, value=1.08, step=0.01, format="%.2f")
 elif meattype == "fish":
-    thermal_diffusivity = st.sidebar.slider("[α] Thermal Diffusivity (10⁻⁷ m²/s):", min_value=1.50, max_value=1.80, value=1.51, step=0.01, format="%.2f")
+    thermal_diffusivity = st.sidebar.slider("[α] Thermal Diffusivity (10⁻⁷ m²/s):", min_value=1.09, max_value=1.60, value=1.09, step=0.01, format="%.2f")
+elif meattype == "other":
+    thermal_diffusivity = st.sidebar.slider("[α] Thermal Diffusivity (10⁻⁷ m²/s):", min_value=1.00, max_value=2.00, value=1.11, step=0.01, format="%.2f")
 
-heat_transfer = st.sidebar.number_input("[h] Surface Heat Transfer Coefficient (W/m²-K):", value=100, step=1)
+heat_transfer = st.sidebar.number_input("[h] Surface Heat Transfer Coefficient (W/m²-K):", value=95, step=1)
 thermal_conductivity = st.sidebar.number_input("[k] Thermal Conductivity (W/m-K):", value=0.48, step=0.01, format="%.2f")
 
 
 # Display Simulation results
 if st.sidebar.button("Run Simulation"):
-    from models.parameters import MeatSimulationParameters, LOG_REDUCTION_MIN_THRESHOLD
     msp = MeatSimulationParameters()
-    msp.define_meat_shape(shape=shape,thickness_mm=thickness)
+    msp.define_meat_shape(shape=shape,thickness_mm=thickness, correct_beta_for_large_slabs=correct_beta_for_large_slabs)
     msp.T_initial = initial_temperature
     msp.T_fluid = roner_termperature
     msp.simulation_hours = final_time
     msp.alpha = thermal_diffusivity * 1e-7
     msp.h = heat_transfer
     msp.k = thermal_conductivity
-    r_values = msp.r_values
+    r_values = msp.list_radius_values
     thermal_stability_threshold = msp.thermal_stability_threshold
     
-    with st.spinner("Running simulation..."):
-        from models.solvers import SimulateMeat
-        from models.solvers import LogReduction
-        T_sol, time_points, second_stability_reached = SimulateMeat(msp)
-        center_temperatures = T_sol[0, :]  # First row corresponds to T[0] (r = 0)
-        LR_total, LR_in_time, safety_instant = LogReduction(center_temperatures, msp.dt)
+    current_simulation_bar = st.progress(0, text=f"Simulating...")
+    iteration_start_datetime = datetime.now()
+    def _update_progress(t, y):
+        elapsed_timedelta = datetime.now() - iteration_start_datetime
+        remaining_timedelta = elapsed_timedelta / (t+msp.delta_time) * (msp.t_max - t)
+        current_simulation_bar.progress(t/msp.t_max, text=f"Simulating... Elapsed: {seconds_to_mmss(int(elapsed_timedelta.total_seconds()))}, Remaining: {seconds_to_mmss(int(remaining_timedelta.total_seconds()))}")
+        return 1
     
-        # Prepare data for Streamlit line_chart
-        time_points_minutes = time_points / 60  # Convert seconds to minutes
+    T_sol, time_points, second_stability_reached = SimulateMeat(msp, progress_callback=_update_progress)
+    center_temperatures = T_sol[0, :]  # First row corresponds to T[0] (r = 0)
+    LR_total, LR_in_time, safety_instant = LogReduction(center_temperatures, msp.delta_time)
+
+    # Prepare data for Streamlit line_chart
+    time_points_minutes = time_points / 60  # Convert seconds to minutes
         
 
     ######## Display the temporal evolution of the Center
@@ -88,10 +108,10 @@ if st.sidebar.button("Run Simulation"):
     minute_stability_reached = second_stability_reached / 60 if second_stability_reached is not None else None
 
     # Display the result
-    if minute_stability_reached is not None:
-        st.info(f"The piece of meat reaches thermal stability (i.e., 0.5°C below the final temperature) at approximately {int(minute_stability_reached)//60}h:{int(minute_stability_reached)%60}m")
+    if second_stability_reached is not None:
+        st.info(f"The piece of meat reaches thermal stability approximately after hh:mm {seconds_to_hhmm(second_stability_reached)}")
     else:
-        st.info("The center does not reach 0.5°C below the final temperature within the simulated time.")
+        st.info("The center does not reach thermal stability within the simulated time.")
 
     # Create the Plotly figure
     fig = go.Figure()
@@ -119,14 +139,14 @@ if st.sidebar.button("Run Simulation"):
     ))
 
     # Mark the time when the center reaches the threshold, if applicable
-    if minute_stability_reached is not None:
+    if second_stability_reached is not None:
         fig.add_trace(go.Scatter(
-            x=[minute_stability_reached],
+            x=[second_stability_reached//60],
             y=[thermal_stability_threshold],
             mode='markers+text',
-            name=f"Stability approx. at {int(minute_stability_reached)//60}h:{int(minute_stability_reached)%60}m",
+            name=f"Stability approx. at {seconds_to_hhmm(second_stability_reached)}",
             marker=dict(color='green', size=10),
-            text=f"{int(minute_stability_reached)//60}h:{int(minute_stability_reached)%60}m",
+            text=f"{seconds_to_hhmm(second_stability_reached)}",
             textposition="top center"
         ))
 
@@ -159,7 +179,7 @@ if st.sidebar.button("Run Simulation"):
     if safety_instant_min is None:
         st.error("The meat does not reach acceptable healthy levels for eating during simulation time.")
     else:
-        st.success(f"The meat reaches acceptables healthy levels {safety_instant_min//60}h:{int(safety_instant_min)%60}m, i.e., a 6-log reduction (99.9999% reduction of pathogens)")
+        st.success(f"The meat reaches acceptables healthy levels in hh:mm {seconds_to_hhmm(safety_instant)}, i.e., a 6-log reduction (99.9999% reduction of pathogens)")
     
     # Create the Plotly figure
     fig = go.Figure()

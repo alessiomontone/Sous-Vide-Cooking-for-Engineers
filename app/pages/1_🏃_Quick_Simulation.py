@@ -7,6 +7,8 @@ from datetime import time, date, datetime, timedelta
 
 from models.solvers import SimulateMeat
 from models.solvers import LogReduction
+from models.helpers import seconds_to_mmss
+from models.parameters import MeatSimulationParameters, LOG_REDUCTION_MIN_THRESHOLD
 
 # Allow acces to the models 
 import sys
@@ -26,7 +28,7 @@ st.title("🏃 Quick Simulation")
 
 st.sidebar.header("🏃 Parameters")
 
-thickness = st.sidebar.number_input("Thickness (mm):", value=20, step=5)
+thickness = st.sidebar.number_input("Thickness (mm):", min_value=5, value=20, step=5)
 
 shape_options = {
     "🥩 Slab": "slab",
@@ -35,7 +37,7 @@ shape_options = {
 }
 shape = shape_options[st.sidebar.selectbox("Shape:", shape_options.keys(), help="The shape of the piece of the meat that is being cooked")]
 
-start_hhmm = st.sidebar.time_input("Starting time (h:mm):", value=time(9, 00), help="The time of the day at which the cooking is expected to start")
+start_datetime = st.sidebar.time_input("Starting time (h:mm):", value="now", help="The time of the day at which the cooking is expected to start")
 
 initial_temperature = st.sidebar.number_input("Food Initial Temperature (°C):", value=5.0, step=0.5, format="%.1f")
 
@@ -43,28 +45,34 @@ roner_termperature = st.sidebar.number_input("Roner Temperature (°C):", value=5
 
 # Display Simulation results
 if st.sidebar.button("Run Simulation"):
-    from models.parameters import MeatSimulationParameters, LOG_REDUCTION_MIN_THRESHOLD
     msp = MeatSimulationParameters()
     msp.define_meat_shape(shape=shape,thickness_mm=thickness)
     msp.T_initial = initial_temperature
     msp.T_fluid = roner_termperature
-    r_values = msp.r_values
+    r_values = msp.list_radius_values
     thermal_stability_threshold = msp.thermal_stability_threshold
     # msp.simulation_hours => TODO: Iterate over the hours
     
-    with st.spinner("Running simulation..."):
-        st.toast("Starting simulation...", icon="ℹ️")
-        for hour in [5,6,12,18,24]:
-            msp.simulation_hours = hour
-            T_sol, time_points, second_stability_reached = SimulateMeat(msp)
-            center_temperatures = T_sol[0, :]  # First row corresponds to T[0] (r = 0)
-            LR_total, LR_in_time, safety_instant = LogReduction(center_temperatures, msp.dt)
-            
-            if safety_instant is not None:
-                break
-            else:
-                st.toast("No safety level reached yet... increasing simulation time", icon="⏳")
+    for hour in [4,6,12,18,24]:
+        current_simulation_bar = st.progress(0, text=f"Simulating first {hour} hours")
+        iteration_start_datetime = datetime.now()
+        def _update_progress(t, y):
+            elapsed_timedelta = datetime.now() - iteration_start_datetime
+            remaining_timedelta = elapsed_timedelta / (t+msp.delta_time) * (msp.t_max - t)
+            current_simulation_bar.progress(t/msp.t_max, text=f"Simulating first {hour} hours. Elapsed: {seconds_to_mmss(int(elapsed_timedelta.total_seconds()))}, Remaining: {seconds_to_mmss(int(remaining_timedelta.total_seconds()))}")
+            return 1
+        msp.simulation_hours = hour
+        T_sol, time_points, second_stability_reached = SimulateMeat(msp, progress_callback=_update_progress)
+        current_simulation_bar.empty()
         
+        center_temperatures = T_sol[0, :]  # First row corresponds to T[0] (r = 0)
+        LR_total, LR_in_time, safety_instant = LogReduction(center_temperatures, msp.delta_time)
+        
+        if safety_instant is not None:
+            break
+        else:
+            st.toast("No safety level reached yet... increasing simulation time", icon="⏳")
+    
 
     ######## Display the temporal evolution of the Center
     #####################################################
@@ -72,19 +80,19 @@ if st.sidebar.button("Run Simulation"):
     
     # Convert instant at which thermal stability is reached in minutes
     time_points_minutes = time_points / 60  # Convert seconds to minutes
-    start_time = datetime.combine(date(2025,1,1), start_hhmm)  # Example: Experiment starts at 9:00 AM
-    time_points_hhmm = [start_time + timedelta(minutes=minutes) for minutes in time_points_minutes]
-    hhmm_stability_reached = start_time + timedelta(seconds=second_stability_reached) if second_stability_reached is not None else None
-    hhmm_safety_reached = start_time + timedelta(seconds=safety_instant) if safety_instant is not None else None
+    start_datetime = datetime.combine(date(2025,1,1), start_datetime)  # Example: Experiment starts at 9:00 AM
+    time_points_hhmm = [start_datetime + timedelta(minutes=minutes) for minutes in time_points_minutes]
+    stability_reached_datetime = start_datetime + timedelta(seconds=second_stability_reached) if second_stability_reached is not None else None
+    safety_reached_datetime = start_datetime + timedelta(seconds=safety_instant) if safety_instant is not None else None
     
 
     # Display the result
-    if hhmm_safety_reached is not None:
-        st.success(f"If cooking starts at {start_hhmm:%H:%M}, food can be **safely consumed starting from {hhmm_safety_reached:%H:%M}**✔️")
+    if safety_reached_datetime is not None:
+        st.success(f"If cooking starts at {start_datetime:%H:%M}, food can be **safely consumed starting from {safety_reached_datetime:%H:%M}**✔️")
     else:
         st.error("No safety level reached in reasonable time")
         
-    if hhmm_stability_reached is None:
+    if stability_reached_datetime is None:
         st.info("No stable temperature reached in reasonable time")
         
     
@@ -106,32 +114,32 @@ if st.sidebar.button("Run Simulation"):
     ))
 
     # Mark the time when the center reaches the threshold, if applicable
-    if hhmm_stability_reached is not None:
+    if stability_reached_datetime is not None:
         fig.add_trace(go.Scatter(
-            x=[hhmm_stability_reached],
+            x=[stability_reached_datetime],
             y=[thermal_stability_threshold],
             mode='markers+text',
             name=f"Stable temperature",
             marker=dict(color='yellow', symbol='circle', size=20),
-            text=f"<b>{hhmm_stability_reached:%H:%M}</b>",
+            text=f"<b>{stability_reached_datetime:%H:%M}</b>",
             textposition="bottom center"
         ))
         
     # Mark the time when the safety level is reached, if applicable
-    if hhmm_safety_reached is not None:
+    if safety_reached_datetime is not None:
         fig.add_trace(go.Scatter(
-            x=[hhmm_safety_reached],
+            x=[safety_reached_datetime],
             y=[thermal_stability_threshold],
             mode='markers+text',
             name=f"Safety level reached (Pasteurization)",
             marker=dict(color='green', symbol='circle-dot', size=20),
-            text=f"<b>{hhmm_safety_reached:%H:%M}</b>",
+            text=f"<b>{safety_reached_datetime:%H:%M}</b>",
             textposition="top center"
         ))
         
         fig.add_shape(
             type="rect",
-            x0=hhmm_safety_reached,
+            x0=safety_reached_datetime,
             x1=time_points_hhmm[-1],
             y0=0,
             y1=max(center_temperatures),

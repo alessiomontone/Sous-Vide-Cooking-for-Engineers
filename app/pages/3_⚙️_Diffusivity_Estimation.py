@@ -43,7 +43,7 @@ roner_termperature = st.sidebar.number_input("Roner Temperature (°C):", value=5
 #with st.sidebar.expander("Advanced"):
 final_time = st.sidebar.number_input("Simulation Time (h):", value=5, step=1)
 # thermal_diffusivity = st.number_input("[α] Thermal Diffusivity (e-7 m²/s):", value=1.11, step=0.01, format="%.2f")
-heat_transfer = st.sidebar.number_input("[h] Surface Heat Transfer Coefficient (W/m²-K):", value=100, step=1)
+heat_transfer = st.sidebar.number_input("[h] Surface Heat Transfer Coefficient (W/m²-K):", value=95, step=1)
 thermal_conductivity = st.sidebar.number_input("[k] Thermal Conductivity (W/m-K):", value=0.48, step=0.01, format="%.2f")
 
 # Display Simulation results

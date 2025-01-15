@@ -51,7 +51,17 @@ def SimulateMeat(msp: MeatSimulationParameters, progress_callback = None)-> (np.
             dTdt[i] = msp.alpha * (d2T_dr2 + radial_term)
         
         # Convective boundary condition at the outer radius
-        dTdt[-1] = msp.alpha * (1 / dr**2) * (T[-2] - T[-1] - (dr * msp.h / msp.k) * (T[-1] - msp.T_fluid))
+        # First version
+        #dTdt[-1] = msp.alpha * (1 / dr**2) * (T[-2] - T[-1] - (dr * msp.h / msp.k) * (T[-1] - msp.T_fluid))
+        
+        # Explicit ghost point T(R+Delta R,t)
+        T_ghost = T[-1] - dr * msp.h / msp.k * (T[-1] - msp.T_fluid)
+        dTdt[-1] = msp.alpha * (
+            # Second derivative
+            (T[-2] - 2*T[-1] + T_ghost) / dr**2 +                 
+            # Radial term
+            (msp.Beta * (T_ghost - T[-2])/(2*dr))*(1/msp.radius)
+        )
         
         return dTdt
         

@@ -41,7 +41,7 @@ class MeatSimulationParameters:
     def Beta_correction_large_slabs(self):
         return self._Beta_correction_large_slabs
 
-    @Beta.setter
+    @Beta_correction_large_slabs.setter
     def Beta_correction_large_slabs(self, value):
         raise AttributeError("Direct modification of Beta correction for large slabs is not allowed. Use the define_meat_shape method.")
     

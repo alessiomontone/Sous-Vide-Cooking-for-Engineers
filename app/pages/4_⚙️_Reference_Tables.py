@@ -51,7 +51,7 @@ if option == "Heating":
     thickness = st.sidebar.slider("Thickness (mm):", min_value=5,max_value=115, value=(5,115), step=5)
     
     if thickness[0]<10:
-        st.sidebar.warning("For thicknesses below 10mm, each simulation time may require several minutes", icon="⚠️")
+        st.sidebar.warning("For thicknesses below 10mm, each simulation may require several minutes", icon="⚠️")
     
     shape_options = {
         "🥩 Slab": "slab",

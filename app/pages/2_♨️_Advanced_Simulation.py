@@ -40,7 +40,7 @@ shape_options = {
 }
 shape = shape_options[st.sidebar.selectbox("Shape:", shape_options.keys())]
 if shape == "slab":
-        correct_beta_for_large_slabs = st.sidebar.checkbox(label="Correct Beta for large values of thickenss", value = True, 
+    correct_beta_for_large_slabs = st.sidebar.checkbox(label="Correct Beta for large values of thickenss", value = True, 
                                                        help="For computaton of Table 2 in Baldwin's paper it has been used")
 else:
     correct_beta_for_large_slabs = None
@@ -74,7 +74,7 @@ thermal_conductivity = st.sidebar.number_input("[k] Thermal Conductivity (W/m-K)
 # Display Simulation results
 if st.sidebar.button("Run Simulation"):
     msp = MeatSimulationParameters()
-    msp.define_meat_shape(shape=shape,thickness_mm=thickness, correct_beta_for_large_slabs=correct_beta_for_large_slabs)
+    msp.define_meat_shape(shape=shape,thickness_mm=thickness, thick_slabs_beta_correction=correct_beta_for_large_slabs)
     msp.T_initial = initial_temperature
     msp.T_fluid = roner_termperature
     msp.simulation_hours = final_time
@@ -313,6 +313,5 @@ if st.sidebar.button("Run Simulation"):
         st.divider()
         # Add simulation details
         st.subheader("Simulation parameters")
-        df = msp.to_dataframe()
-        df = df.style.format({'Value': '{:.2e}'})
-        st.dataframe(df)
+        st.markdown(f"""```{msp.to_monospace_str()}```""")
+    

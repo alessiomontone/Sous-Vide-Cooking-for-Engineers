@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from models.parameters import MeatSimulationParameters, LOG_REDUCTION_MIN_THRESHOLD
 from models.solvers import SimulateMeat
 from models.solvers import LogReduction
-from models.helpers import seconds_to_hhmm
+from models.helpers import seconds_to_hhmm, update_progress_bar
 from models.helpers import seconds_to_mmss
 
 # Allow acces to the models 
@@ -37,10 +37,19 @@ intro = st.markdown("""
 
 st.sidebar.header("⚙️ Parameters")
 
-option = st.sidebar.selectbox(
-    "Select table type",
-    ("Heating", "Pasteurization"),
-)
+# Initialize session state to track user's choice
+EMPTY_SELECTION = " "
+if "selected_reftable" not in st.session_state:
+    st.session_state.selected_reftable = EMPTY_SELECTION
+
+# Dropdown with dynamic options
+if st.session_state.selected_reftable == EMPTY_SELECTION:
+    options = [EMPTY_SELECTION, "Heating", "Pasteurization"]  # Include placeholder
+else:
+    options = ["Heating", "Pasteurization"]  # Remove placeholder after selection
+
+# Render the dropdown
+option = st.sidebar.selectbox("Choose a Table:", options, key="selected_reftable")
 
 st.sidebar.markdown("---")
 
@@ -59,65 +68,67 @@ if option == "Heating":
         "🟤 Sphere": "sphere"
     }
     shapes = [shape_options[key] for key in st.sidebar.multiselect("Shape:", shape_options.keys()) if key in shape_options.keys()]
+    if len(shapes) == 0:
+        st.sidebar.warning("Please select at least one shape", icon="⚠️")
+    
     if "slab" in shapes:
-        correct_beta_for_large_slabs = st.sidebar.checkbox(label="Correct Beta for large values of thickenss", value = False, 
+        correct_beta_for_large_slabs = st.sidebar.checkbox(label="", value = False, 
                                                         help="For computaton of Table 1 in Baldwin's paper it has not been used")
     else:
         correct_beta_for_large_slabs = None
     
     initial_temperature = st.sidebar.number_input("Food Initial Temperature (°C):", value=5.0, step=0.5, format="%.1f")
-    roner_termperature = st.sidebar.number_input("Roner Temperature (°C):", value=58.0, step=0.5, format="%.1f")
-    simulation_time_h_int = st.sidebar.number_input("Simulation Time (h):", value=6, step=1)
+    roner_termperature = st.sidebar.number_input("Roner Temperature (°C):",min_value=54.0, value=58.0, step=0.5, format="%.1f")
+    simulation_time_h_int = st.sidebar.number_input("Simulation Time (h):",min_value=1, value=6, step=1)
     thermal_diffusivity = st.sidebar.slider("[α] Thermal Diffusivity (10⁻⁷ m²/s):", min_value=1.10, max_value=1.80, value=1.40, step=0.01, format="%.2f")
-    heat_transfer = st.sidebar.number_input("[h] Surface Heat Transfer Coefficient (W/m²-K):", value=95, step=1)
-    thermal_conductivity = st.sidebar.number_input("[k] Thermal Conductivity (W/m-K):", value=0.48, step=0.01, format="%.2f")
-    
-    if st.sidebar.button("Run heating simulations"):    
-        # Initialize parameters
-        msp = MeatSimulationParameters()
-        msp.T_initial = initial_temperature
-        msp.T_fluid = roner_termperature
-        msp.simulation_hours = simulation_time_h_int
-        msp.alpha = thermal_diffusivity * 1e-7
-        msp.h = heat_transfer
-        msp.k = thermal_conductivity
-        radius_values_list = msp.list_radius_values
-        thermal_stability_threshold = msp.thermal_stability_threshold    
-        
-        result = []
-        total_combinations = len(shapes) * ((thickness[1]-thickness[0])//5 + 1)
-        curr_idx = 0
-        overall_progress_bar = st.progress(0,text="Preparing simulation...")
-        for curr_thickness in range (thickness[0], thickness[1]+1, 5):
-            dict_result = {"Thickness (mm)": curr_thickness}
-            for curr_shape in shapes:
-                
-                # Manage overall and current iteration progress bars
-                overall_progress_bar.progress(curr_idx/total_combinations, f"Table computation. Running simulation for {curr_shape}-{curr_thickness}mm")
-                msp.define_meat_shape(shape=curr_shape,thickness_mm=curr_thickness,thick_slabs_beta_correction=correct_beta_for_large_slabs)
-                current_simulation_bar = st.progress(0, text="Current simulation progress")
-                iteration_start_datetime = datetime.now()         
-                def _update_progress(t, y):
-                    elapsed_timedelta = datetime.now() - iteration_start_datetime
-                    remaining_timedelta = elapsed_timedelta / (t+msp.delta_time) * (msp.t_max - t)
-                    current_simulation_bar.progress(t/msp.t_max, text=f"Current Simulation | Elapsed: {seconds_to_mmss(int(elapsed_timedelta.total_seconds()))}, Remaining: {seconds_to_mmss(int(remaining_timedelta.total_seconds()))}")
-                    return 1
-                
-                # Main simulation
-                T_sol_matrix, time_points_array, second_stability_reached = SimulateMeat(msp, progress_callback=_update_progress)
-                
-                # update current iteration progress bar
-                current_simulation_bar.empty()
-                
-                st.toast(f"Simulation for {curr_shape}-{curr_thickness}mm completed and thermal stability found at {seconds_to_hhmm(second_stability_reached)}", icon="ℹ️")
-                dict_result[curr_shape] = seconds_to_hhmm(second_stability_reached)
-                curr_idx += 1
-            result.append(dict_result)
-        overall_progress_bar.empty()
-        
-        intro.empty()
-        st.write("Estimated heating time:")
-        st.dataframe(pd.DataFrame(result))
+    heat_transfer = st.sidebar.number_input("[h] Surface Heat Transfer Coefficient (W/m²-K):",min_value=1, value=95, step=1)
+    thermal_conductivity = st.sidebar.number_input("[k] Thermal Conductivity (W/m-K):",min_value=0.01, value=0.48, step=0.01, format="%.2f")
+    if len(shapes)>0:
+        if st.sidebar.button("Run heating simulations"):
+            intro.empty()    
+            # Initialize parameters
+            msp = MeatSimulationParameters()
+            msp.T_initial = initial_temperature
+            msp.T_fluid = roner_termperature
+            msp.simulation_hours = simulation_time_h_int
+            msp.alpha = thermal_diffusivity * 1e-7
+            msp.h = heat_transfer
+            msp.k = thermal_conductivity
+            radius_values_list = msp.list_radius_values
+            thermal_stability_threshold = msp.thermal_stability_threshold    
+            
+            result = []
+            total_combinations = len(shapes) * ((thickness[1]-thickness[0])//5 + 1)
+            curr_idx = 0
+            overall_progress_bar = st.progress(0,text="Preparing simulation...")
+            for curr_thickness in range (thickness[0], thickness[1]+1, 5):
+                dict_result = {"Thickness (mm)": curr_thickness}
+                for curr_shape in shapes:
+                    
+                    # Manage overall and current iteration progress bars
+                    overall_progress_bar.progress(curr_idx/total_combinations, f"Table computation. Running simulation for {curr_shape}-{curr_thickness}mm")
+                    msp.define_meat_shape(shape=curr_shape,thickness_mm=curr_thickness,thick_slabs_beta_correction=correct_beta_for_large_slabs)
+                    
+                    current_simulation_bar = st.progress(0, text="Current simulation progress")
+                    iteration_start_datetime = datetime.now()         
+                    _update_progress = lambda t,y : update_progress_bar(t=t, y=y, Delta_t=msp.delta_time,t_max= msp.t_max, 
+                                                                iteration_start_datetime= iteration_start_datetime, current_simulation_bar=current_simulation_bar)
+                    
+                    # Main simulation
+                    T_sol_matrix, time_points_array, second_stability_reached = SimulateMeat(msp, progress_callback=_update_progress)
+                    
+                    # update current iteration progress bar
+                    current_simulation_bar.empty()
+                    
+                    st.toast(f"Simulation for {curr_shape}-{curr_thickness}mm completed and thermal stability found at {seconds_to_hhmm(second_stability_reached)}", icon="ℹ️")
+                    dict_result[curr_shape] = seconds_to_hhmm(second_stability_reached)
+                    curr_idx += 1
+                result.append(dict_result)
+            overall_progress_bar.empty()
+            
+            intro.empty()
+            st.write("Estimated heating time:")
+            st.dataframe(pd.DataFrame(result))
 
 ## Pasteurization reference table generation
 ############################################
@@ -134,7 +145,7 @@ elif option == "Pasteurization":
     }
     shape = shape_options[st.sidebar.selectbox("Shape:", shape_options.keys())]
     if shape == "slab":
-        correct_beta_for_large_slabs = st.sidebar.checkbox(label="Correct Beta for large values of thickenss", value = True, 
+        correct_beta_for_large_slabs = st.sidebar.checkbox(label="Correct Beta for large values of slab thickenss (>30mm)", value = True, 
                                                        help="For computaton of Table 2 in Baldwin's paper it has been used")
     else:
         correct_beta_for_large_slabs = None
@@ -147,7 +158,7 @@ elif option == "Pasteurization":
     thermal_conductivity = st.sidebar.number_input("[k] Thermal Conductivity (W/m-K):", value=0.48, step=0.01, format="%.2f")
 
     if st.sidebar.button("Run pasteurization simulations"):
-        
+        intro.empty()
         msp = MeatSimulationParameters()
         msp.T_initial = initial_temperature
         msp.simulation_hours = simulation_time_h_int

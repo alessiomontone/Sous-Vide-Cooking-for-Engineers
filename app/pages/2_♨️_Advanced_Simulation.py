@@ -7,7 +7,7 @@ from datetime import datetime
 
 from models.solvers import SimulateMeat
 from models.solvers import LogReduction
-from models.helpers import seconds_to_mmss, seconds_to_hhmm
+from models.helpers import seconds_to_mmss, seconds_to_hhmm, update_progress_bar
 from models.parameters import MeatSimulationParameters, LOG_REDUCTION_MIN_THRESHOLD
 
 # Allow acces to the models 
@@ -28,7 +28,7 @@ st.title("♨️ Advanced Simulation")
 
 st.sidebar.header("♨️ Parameters")
 
-thickness = st.sidebar.number_input("Thickness (mm):", value=20, step=5)
+thickness = st.sidebar.number_input("Thickness (mm):", min_value=5, value=20, step=5)
 
 if thickness < 10:
     st.sidebar.info("Short (<2h) simulation time suggested for small thicknesses.")
@@ -45,8 +45,8 @@ if shape == "slab":
 else:
     correct_beta_for_large_slabs = None
 initial_temperature = st.sidebar.number_input("Food Initial Temperature (°C):", value=5.0, step=0.5, format="%.1f")
-roner_termperature = st.sidebar.number_input("Roner Temperature (°C):", value=58.0, step=0.5, format="%.1f")
-final_time = st.sidebar.number_input("Simulation Time (h):", value=5, step=1)
+roner_termperature = st.sidebar.number_input("Roner Temperature (°C):", min_value=54.0, value=58.0, step=0.5, format="%.1f")
+final_time = st.sidebar.number_input("Simulation Time (h):",min_value=1, value=5, step=1)
 
 meattype_options = {
     "🐄 Beef": "beef",
@@ -67,8 +67,8 @@ elif meattype == "fish":
 elif meattype == "other":
     thermal_diffusivity = st.sidebar.slider("[α] Thermal Diffusivity (10⁻⁷ m²/s):", min_value=1.00, max_value=2.00, value=1.11, step=0.01, format="%.2f")
 
-heat_transfer = st.sidebar.number_input("[h] Surface Heat Transfer Coefficient (W/m²-K):", value=95, step=1)
-thermal_conductivity = st.sidebar.number_input("[k] Thermal Conductivity (W/m-K):", value=0.48, step=0.01, format="%.2f")
+heat_transfer = st.sidebar.number_input("[h] Surface Heat Transfer Coefficient (W/m²-K):", min_value=1, value=95, step=1)
+thermal_conductivity = st.sidebar.number_input("[k] Thermal Conductivity (W/m-K):", min_value=0.01, value=0.48, step=0.01, format="%.2f")
 
 
 # Display Simulation results
@@ -86,15 +86,14 @@ if st.sidebar.button("Run Simulation"):
     
     current_simulation_bar = st.progress(0, text=f"Simulating...")
     iteration_start_datetime = datetime.now()
-    def _update_progress(t, y):
-        elapsed_timedelta = datetime.now() - iteration_start_datetime
-        remaining_timedelta = elapsed_timedelta / (t+msp.delta_time) * (msp.t_max - t)
-        current_simulation_bar.progress(t/msp.t_max, text=f"Simulating... Elapsed: {seconds_to_mmss(int(elapsed_timedelta.total_seconds()))}, Remaining: {seconds_to_mmss(int(remaining_timedelta.total_seconds()))}")
-        return 1
+    _update_progress = lambda t,y : update_progress_bar(t=t, y=y, Delta_t=msp.delta_time,t_max= msp.t_max, 
+                                                            iteration_start_datetime= iteration_start_datetime, current_simulation_bar=current_simulation_bar)
+    
     
     T_sol, time_points, second_stability_reached = SimulateMeat(msp, progress_callback=_update_progress)
     center_temperatures = T_sol[0, :]  # First row corresponds to T[0] (r = 0)
     LR_total, LR_in_time, safety_instant = LogReduction(center_temperatures, msp.delta_time)
+    current_simulation_bar.empty()
 
     # Prepare data for Streamlit line_chart
     time_points_minutes = time_points / 60  # Convert seconds to minutes
@@ -153,7 +152,7 @@ if st.sidebar.button("Run Simulation"):
     # Update the layout
     fig.update_layout(
         title=dict(
-            text="Temporal Variation of Temperature at the meat center",
+            text="Temperature at the meat center",
             x=0.5,  # Center the title
             xanchor="center",  # Align the title anchor to the center,
             font=dict(
@@ -312,6 +311,6 @@ if st.sidebar.button("Run Simulation"):
 
         st.divider()
         # Add simulation details
-        st.subheader("Simulation parameters")
+        st.markdown("**Simulation parameters**")
         st.markdown(f"""```{msp.to_monospace_str()}```""")
     

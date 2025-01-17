@@ -7,7 +7,7 @@ from datetime import time, date, datetime, timedelta
 
 from models.solvers import SimulateMeat
 from models.solvers import LogReduction
-from models.helpers import seconds_to_mmss
+from models.helpers import seconds_to_mmss, update_progress_bar
 from models.parameters import MeatSimulationParameters, LOG_REDUCTION_MIN_THRESHOLD
 
 # Allow acces to the models 
@@ -22,6 +22,11 @@ st.set_page_config(
 )
 
 st.title("🏃 Quick Simulation")
+
+intro = st.markdown("""
+            Here you can rapidly simulate sous vide cooking, just choose the parameters from the sidebar on the left of the page.
+            The simulation will show you the temperature evolution at the center of the meat and when the food can be safely consumed.
+            """)
 
 ## Sidebar - Input parameters for the simulation
 ################################################
@@ -41,10 +46,11 @@ start_datetime = st.sidebar.time_input("Starting time (h:mm):", value="now", hel
 
 initial_temperature = st.sidebar.number_input("Food Initial Temperature (°C):", value=5.0, step=0.5, format="%.1f")
 
-roner_termperature = st.sidebar.number_input("Roner Temperature (°C):", value=58.0, step=0.5, format="%.1f")
+roner_termperature = st.sidebar.number_input("Roner Temperature (°C):",min_value=54.0, value=58.0, step=0.5, format="%.1f")
 
 # Display Simulation results
 if st.sidebar.button("Run Simulation"):
+    intro.empty()
     msp = MeatSimulationParameters()
     msp.define_meat_shape(shape=shape,thickness_mm=thickness)
     msp.T_initial = initial_temperature
@@ -54,14 +60,12 @@ if st.sidebar.button("Run Simulation"):
     # msp.simulation_hours => TODO: Iterate over the hours
     
     for hour in [4,6,12,18,24]:
+        msp.simulation_hours = hour 
+        
         current_simulation_bar = st.progress(0, text=f"Simulating first {hour} hours")
         iteration_start_datetime = datetime.now()
-        def _update_progress(t, y):
-            elapsed_timedelta = datetime.now() - iteration_start_datetime
-            remaining_timedelta = elapsed_timedelta / (t+msp.delta_time) * (msp.t_max - t)
-            current_simulation_bar.progress(t/msp.t_max, text=f"Simulating first {hour} hours. Elapsed: {seconds_to_mmss(int(elapsed_timedelta.total_seconds()))}, Remaining: {seconds_to_mmss(int(remaining_timedelta.total_seconds()))}")
-            return 1
-        msp.simulation_hours = hour
+        _update_progress = lambda t,y : update_progress_bar(t=t, y=y, Delta_t=msp.delta_time,t_max= msp.t_max, 
+                                                            iteration_start_datetime= iteration_start_datetime, current_simulation_bar=current_simulation_bar)
         T_sol, time_points, second_stability_reached = SimulateMeat(msp, progress_callback=_update_progress)
         current_simulation_bar.empty()
         
@@ -182,9 +186,7 @@ if st.sidebar.button("Run Simulation"):
     
     st.markdown("Simulation parameters here 👉", help=f"```{msp.to_monospace_str()}```")
     
-else:
-    st.write("Here you can rapidly simulate sous vide cooking, just choose the parameters from the sidebar on the left of the page.")
-    st.write(" The simulation will show you the temperature evolution at the center of the meat and when the food can be safely consumed.")
+
     
     
     

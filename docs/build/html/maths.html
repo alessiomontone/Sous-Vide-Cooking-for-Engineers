@@ -92,7 +92,7 @@
 <div class="math notranslate nohighlight">
 \[\begin{split}\begin{equation}
     \begin{cases}
-    T_t = \alpha \lbrace T_{rr} + \beta \frac{T_r}{r} \rbrace, \\
+    T_t = \alpha \big[ T_{rr} + \beta \frac{T_r}{r} \big], \\
     T(r, 0) = T_0, \quad T_r(0, t) = 0, \\
     T_r(R, t) = \frac{h}{k} \lbrace T_{\text{Water}} - T(R, t) \rbrace
     \end{cases} \tag{*}
@@ -148,20 +148,18 @@
 <p>Heat transfer at the border with the fluid (i.e., <span class="math notranslate nohighlight">\(r=R\)</span>) are modeled putting together Newton’s law of heating and Fourier’s thermal conductivity law, giving:</p>
 <div class="math notranslate nohighlight">
 \[\text{Heat transfer} = k \frac{\partial T}{\partial r} \bigg|_{r=R} = -h \big(T(R,t) - T_\text{Water} \big)\]</div>
-<p>and performing a discrete approximation of the left hand side, where <span class="math notranslate nohighlight">\(T(R+\Delta r,t)\)</span> is a fictious point outside the food:</p>
+<p>and performing a discrete approximation of the left hand side, where <span class="math notranslate nohighlight">\(T_{\text{Ghost}} \equiv T(R+\Delta r,t)\)</span> is a fictious point outside the food:</p>
 <div class="math notranslate nohighlight">
-\[k\frac{T(R+\Delta r,t)-T(R, t)}{\Delta r} \approx -h \big(T(R,t) - T_\text{Water} \big)\]</div>
-<p>and rearranging to explicitly write for the fictious point <span class="math notranslate nohighlight">\(T(R+\Delta r,t)\)</span></p>
+\[k\frac{T_{\text{Ghost}}-T(R, t)}{\Delta r} \approx -h \big(T(R,t) - T_\text{Water} \big)\]</div>
+<p>and rearranging to explicitly write for the fictious point <span class="math notranslate nohighlight">\(T_{\text{Ghost}}\)</span></p>
 <div class="math notranslate nohighlight">
-\[T(R+\Delta r,t) = T(R,t)-\frac{h \Delta r}{k}\big(T(R,t) - T_\text{Water} \big)\]</div>
+\[T_{\text{Ghost}} = T(R,t)-\frac{h \Delta r}{k}\big(T(R,t) - T_\text{Water} \big)\]</div>
 <p>Coming back to the main heat conduction equation, evaluating for <span class="math notranslate nohighlight">\(r=R\)</span>, performing discrete approximation and susbsituting previously computed formula for the temperature of fictious point:</p>
 <div class="math notranslate nohighlight">
 \[\begin{split}\begin{equation}
     \begin{aligned}
-    \frac{\partial T}{\partial t} \bigg|_{r=R} &amp;= \alpha \frac{\partial ^2 T}{\partial r^2} \\
-    &amp;\approx \alpha \frac{T(R-\Delta r,t)-2T(R,t)+ T(R+\Delta r,t)}{\Delta r^2} \\
-    &amp;=\alpha \frac{T(R-\Delta r,t)-2T(R,t)+ T(R,t) - \frac{h \Delta r}{k}\big(T(R,t) - T_\text{Water} \big)}{\Delta r^2} \\
-    \frac{\partial T}{\partial t} \bigg|_{r=R}&amp;= \alpha \frac{T(R-\Delta r,t)-T(R,t) - \frac{h \Delta r}{k}\big(T(R,t) - T_\text{Water} \big)}{\Delta r^2}
+    \frac{\partial T}{\partial t} \bigg|_{r=R} &amp;= \alpha \bigg[ T_{rr} + \beta \frac{T_r}{r} \bigg] \bigg|_{r=R} \\
+    &amp;\approx \alpha \bigg[ \frac{T(R-\Delta r,t)-2T(R,t)+ T(R+\Delta r,t)}{\Delta r^2} + \beta \frac{T_\text{Ghost}-T(R-\Delta r,t)}{2R \Delta r} \bigg] \\
     \end{aligned} \tag{iii}
 \end{equation}\end{split}\]</div>
 </section>
@@ -181,15 +179,22 @@
     <span class="n">dTdt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">msp</span><span class="o">.</span><span class="n">alpha</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">/</span> <span class="n">dr</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">T</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
     <span class="c1"># Interior points</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">msp</span><span class="o">.</span><span class="n">N</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">msp</span><span class="o">.</span><span class="n">N_spatial_points</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
         <span class="n">d2T_dr2</span> <span class="o">=</span> <span class="p">(</span><span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">dr</span><span class="o">**</span><span class="mi">2</span>
-        <span class="n">radial_term</span> <span class="o">=</span> <span class="p">(</span><span class="n">msp</span><span class="o">.</span><span class="n">Beta</span> <span class="o">/</span> <span class="n">r</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">*</span>
-                        <span class="p">(</span><span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">dr</span><span class="p">)</span> <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">radial_term</span> <span class="o">=</span> <span class="p">(</span><span class="n">msp</span><span class="o">.</span><span class="n">Beta</span> <span class="o">/</span> <span class="n">r</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">dr</span><span class="p">)</span> <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
         <span class="n">dTdt</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">msp</span><span class="o">.</span><span class="n">alpha</span> <span class="o">*</span> <span class="p">(</span><span class="n">d2T_dr2</span> <span class="o">+</span> <span class="n">radial_term</span><span class="p">)</span>
 
     <span class="c1"># Convective boundary condition at the outer radius</span>
-    <span class="n">dTdt</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">msp</span><span class="o">.</span><span class="n">alpha</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">dr</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span>
-                <span class="p">(</span><span class="n">T</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">T</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">dr</span> <span class="o">*</span> <span class="n">msp</span><span class="o">.</span><span class="n">h</span> <span class="o">/</span> <span class="n">msp</span><span class="o">.</span><span class="n">k</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">T</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">msp</span><span class="o">.</span><span class="n">T_fluid</span><span class="p">))</span>
+
+    <span class="c1"># Boundary Conditions</span>
+    <span class="c1"># Explicit ghost point T(R+Delta R,t)</span>
+    <span class="n">T_ghost</span> <span class="o">=</span> <span class="n">T</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">dr</span> <span class="o">*</span> <span class="n">msp</span><span class="o">.</span><span class="n">h</span> <span class="o">/</span> <span class="n">msp</span><span class="o">.</span><span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">T</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">msp</span><span class="o">.</span><span class="n">T_fluid</span><span class="p">)</span>
+    <span class="n">dTdt</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">msp</span><span class="o">.</span><span class="n">alpha</span> <span class="o">*</span> <span class="p">(</span>
+        <span class="c1"># Second derivative</span>
+        <span class="p">(</span><span class="n">T</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">T</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">T_ghost</span><span class="p">)</span> <span class="o">/</span> <span class="n">dr</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span>
+        <span class="c1"># Radial term</span>
+        <span class="p">(</span><span class="n">msp</span><span class="o">.</span><span class="n">Beta</span> <span class="o">*</span> <span class="p">(</span><span class="n">T_ghost</span> <span class="o">-</span> <span class="n">T</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">dr</span><span class="p">))</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">msp</span><span class="o">.</span><span class="n">radius</span><span class="p">)</span>
+    <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">dTdt</span>
 </pre></div>

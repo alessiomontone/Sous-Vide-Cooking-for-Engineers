@@ -12,7 +12,7 @@ All the modeling is based on the heat conduction exchange equation in cylindric 
 
     \begin{equation}
         \begin{cases}
-        T_t = \alpha \lbrace T_{rr} + \beta \frac{T_r}{r} \rbrace, \\
+        T_t = \alpha \big[ T_{rr} + \beta \frac{T_r}{r} \big], \\
         T(r, 0) = T_0, \quad T_r(0, t) = 0, \\ 
         T_r(R, t) = \frac{h}{k} \lbrace T_{\text{Water}} - T(R, t) \rbrace 
         \end{cases} \tag{*}
@@ -86,17 +86,17 @@ Heat transfer at the border with the fluid (i.e., :math:`r=R`) are modeled putti
 
     \text{Heat transfer} = k \frac{\partial T}{\partial r} \bigg|_{r=R} = -h \big(T(R,t) - T_\text{Water} \big)
 
-and performing a discrete approximation of the left hand side, where :math:`T(R+\Delta r,t)` is a fictious point outside the food:
+and performing a discrete approximation of the left hand side, where :math:`T_{\text{Ghost}} \equiv T(R+\Delta r,t)` is a fictious point outside the food:
 
 .. math::
 
-    k\frac{T(R+\Delta r,t)-T(R, t)}{\Delta r} \approx -h \big(T(R,t) - T_\text{Water} \big)
+    k\frac{T_{\text{Ghost}}-T(R, t)}{\Delta r} \approx -h \big(T(R,t) - T_\text{Water} \big)
 
-and rearranging to explicitly write for the fictious point :math:`T(R+\Delta r,t)`
+and rearranging to explicitly write for the fictious point :math:`T_{\text{Ghost}}`
 
 .. math::
 
-    T(R+\Delta r,t) = T(R,t)-\frac{h \Delta r}{k}\big(T(R,t) - T_\text{Water} \big)
+    T_{\text{Ghost}} = T(R,t)-\frac{h \Delta r}{k}\big(T(R,t) - T_\text{Water} \big)
 
 
 Coming back to the main heat conduction equation, evaluating for :math:`r=R`, performing discrete approximation and susbsituting previously computed formula for the temperature of fictious point:
@@ -105,10 +105,8 @@ Coming back to the main heat conduction equation, evaluating for :math:`r=R`, pe
 
     \begin{equation}
         \begin{aligned}
-        \frac{\partial T}{\partial t} \bigg|_{r=R} &= \alpha \frac{\partial ^2 T}{\partial r^2} \\
-        &\approx \alpha \frac{T(R-\Delta r,t)-2T(R,t)+ T(R+\Delta r,t)}{\Delta r^2} \\
-        &=\alpha \frac{T(R-\Delta r,t)-2T(R,t)+ T(R,t) - \frac{h \Delta r}{k}\big(T(R,t) - T_\text{Water} \big)}{\Delta r^2} \\
-        \frac{\partial T}{\partial t} \bigg|_{r=R}&= \alpha \frac{T(R-\Delta r,t)-T(R,t) - \frac{h \Delta r}{k}\big(T(R,t) - T_\text{Water} \big)}{\Delta r^2}
+        \frac{\partial T}{\partial t} \bigg|_{r=R} &= \alpha \bigg[ T_{rr} + \beta \frac{T_r}{r} \bigg] \bigg|_{r=R} \\
+        &\approx \alpha \bigg[ \frac{T(R-\Delta r,t)-2T(R,t)+ T(R+\Delta r,t)}{\Delta r^2} + \beta \frac{T_\text{Ghost}-T(R-\Delta r,t)}{2R \Delta r} \bigg] \\
         \end{aligned} \tag{iii}
     \end{equation}
 
@@ -132,14 +130,21 @@ equations :math:`(i)`, :math:`(ii)`, :math:`(iii)` can be coded in Python as fol
         dTdt[0] = msp.alpha * (2 / dr**2) * (T[1] - T[0])
 
         # Interior points
-        for i in range(1, msp.N - 1):
+        for i in range(1, msp.N_spatial_points - 1):
             d2T_dr2 = (T[i+1] - 2*T[i] + T[i-1]) / dr**2
-            radial_term = (msp.Beta / r[i]) * 
-                            (T[i+1] - T[i-1]) / (2 * dr) if r[i] != 0 else 0
+            radial_term = (msp.Beta / r[i]) * (T[i+1] - T[i-1]) / (2 * dr) if r[i] != 0 else 0
             dTdt[i] = msp.alpha * (d2T_dr2 + radial_term)
         
         # Convective boundary condition at the outer radius
-        dTdt[-1] = msp.alpha * (1 / dr**2) * 
-                    (T[-2] - T[-1] - (dr * msp.h / msp.k) * (T[-1] - msp.T_fluid))
+        
+        # Boundary Conditions
+        # Explicit ghost point T(R+Delta R,t)
+        T_ghost = T[-1] - dr * msp.h / msp.k * (T[-1] - msp.T_fluid)
+        dTdt[-1] = msp.alpha * (
+            # Second derivative
+            (T[-2] - 2*T[-1] + T_ghost) / dr**2 +                 
+            # Radial term
+            (msp.Beta * (T_ghost - T[-2])/(2*dr))*(1/msp.radius)
+        )
         
         return dTdt

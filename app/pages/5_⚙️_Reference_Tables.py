@@ -9,8 +9,7 @@ from datetime import datetime, timedelta
 from models.parameters import MeatSimulationParameters, LOG_REDUCTION_MIN_THRESHOLD
 from models.solvers import SimulateMeat
 from models.solvers import LogReduction
-from models.helpers import seconds_to_hhmm, update_progress_bar
-from models.helpers import seconds_to_mmss
+from models.helpers import seconds_to_hhmm_pretty, update_progress_bar
 
 # Allow acces to the models 
 import sys
@@ -120,8 +119,8 @@ if option == "Heating":
                     # update current iteration progress bar
                     current_simulation_bar.empty()
                     
-                    st.toast(f"Simulation for {curr_shape}-{curr_thickness}mm completed and thermal stability found at {seconds_to_hhmm(second_stability_reached)}", icon="ℹ️")
-                    dict_result[curr_shape] = seconds_to_hhmm(second_stability_reached)
+                    st.toast(f"Simulation for {curr_shape}-{curr_thickness}mm completed and thermal stability found at {seconds_to_hhmm_pretty(second_stability_reached)}", icon="ℹ️")
+                    dict_result[curr_shape] = seconds_to_hhmm_pretty(second_stability_reached)
                     curr_idx += 1
                 result.append(dict_result)
             overall_progress_bar.empty()
@@ -184,11 +183,9 @@ elif option == "Pasteurization":
                 overall_progress_bar.progress(curr_idx/total_combinations, f"Table computation. Running simulation for {curr_thickness}mm-{curr_temp}°C")
                 current_simulation_bar = st.progress(0, text="Current simulation progress")
                 iteration_start_datetime = datetime.now()         
-                def _update_progress(t, y):
-                    elapsed_timedelta = datetime.now() - iteration_start_datetime
-                    remaining_timedelta = elapsed_timedelta / (t+msp.delta_time) * (msp.t_max - t)
-                    current_simulation_bar.progress(t/msp.t_max, text=f"Current simulation | Elapsed: {seconds_to_mmss(int(elapsed_timedelta.total_seconds()))}, Remaining: {seconds_to_mmss(int(remaining_timedelta.total_seconds()))}")
-                    return 1
+                _update_progress = lambda t,y : update_progress_bar(t=t, y=y, Delta_t=msp.delta_time,t_max= msp.t_max, 
+                                                                    iteration_start_datetime= iteration_start_datetime, current_simulation_bar=current_simulation_bar)
+            
                 
                 # Main Simulation (Meat and LR)
                 T_sol_matrix, _, _ = SimulateMeat(msp, progress_callback=_update_progress)
@@ -198,8 +195,8 @@ elif option == "Pasteurization":
                 # update current iteration progress bar
                 current_simulation_bar.empty()
                 
-                st.toast(f"Simulation for {curr_thickness}mm-{curr_temp}°C completed and thermal stability found at {seconds_to_hhmm(safety_instant)}", icon="ℹ️")
-                dict_result[f"{curr_temp}°C"] = seconds_to_hhmm(safety_instant)
+                st.toast(f"Simulation for {curr_thickness}mm-{curr_temp}°C completed and thermal stability found at {seconds_to_hhmm_pretty(safety_instant)}", icon="ℹ️")
+                dict_result[f"{curr_temp}°C"] = seconds_to_hhmm_pretty(safety_instant)
                 curr_idx += 1
             result.append(dict_result)
         

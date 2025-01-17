@@ -1,7 +1,12 @@
 import numpy as np
+import pandas as pd
 from scipy.integrate import solve_ivp
+from scipy.optimize import curve_fit
+from typing import Callable
 
 from models.parameters import MeatSimulationParameters, LOG_REDUCTION_MIN_THRESHOLD
+from models.helpers import MeasurementFormat
+
 
 def SimulateMeat(msp: MeatSimulationParameters, progress_callback = None)-> (np.ndarray, np.ndarray, int):
     """
@@ -103,7 +108,7 @@ def LogReduction (center_temperature : np.ndarray, dt : int)-> (float, list):
         safety_instant  Instant of the time (in seconds) when 6-log reduction has been reached
     """
     Dref = (2*60)/6 # 2 minutes for 6-log reduction (converted in seconds)
-    Tref = 70 # Reference temperature in °C
+    Tref = 70       # # 70° of Reference temperature
     z = 7.5 # Z-value in °C
 
     # Initialize the cumulative temporal_evolution array
@@ -121,6 +126,99 @@ def LogReduction (center_temperature : np.ndarray, dt : int)-> (float, list):
     # Calculate the final LR
     LR = total_sum
 
-    safety_instant = next((i*dt for i, value in enumerate(temporal_evolution) if value > LOG_REDUCTION_MIN_THRESHOLD), None)
+    safety_second = next((i*dt for i, value in enumerate(temporal_evolution) if value > LOG_REDUCTION_MIN_THRESHOLD), None)
 
-    return LR, temporal_evolution, safety_instant
+    return LR, temporal_evolution, safety_second
+
+def ExtrapolateHeatingCurve_1exp (measurements :pd.DataFrame, T_inf: float)-> Callable [[int], float]:
+    
+    """
+    Parameters:
+        pd.DataFrame:   DataFrame with the measurements, where first column is the time in minutes and second column is the temperature
+        float:          Final temperature of the heating curve
+        
+    Returns:    
+        Callable:       Function that extrapolates the heating curve at a given time"""
+
+
+    # -------------------------------------------------------------------
+    # 1) Define your two-term exponential model
+    # -------------------------------------------------------------------
+    def single_term_exponential(t, A, k1):
+        """
+        Two-term exponential model for temperature approach.
+        T(t) = T_inf - A*exp(-k1*t)
+        
+        Interpretation:
+        - T_inf : final/steady temperature
+        - A  : amplitudes
+        - k1 : rate constants
+        """
+        return T_inf - A * np.exp(-k1 * t)
+
+
+    # -------------------------------------------------------------------
+    # 2) Fit the two-term exponential model to the data
+    # -------------------------------------------------------------------
+    # We'll provide initial guesses (p0) for the parameters:
+    #   [ A, B, k1, k2]
+    p0 = [20.0,   0.1]  # just a rough guess
+
+    popt, _ = curve_fit(single_term_exponential, measurements[MeasurementFormat.TIMESTAMP], measurements[MeasurementFormat.TEMPERATURE], p0=p0)
+    # Fitted parameters: 
+    # A_fit, k1_fit = popt
+
+    # -------------------------------------------------------------------
+    # 4) Create and return callable
+    # -------------------------------------------------------------------
+    def returned_function(t_fit):
+        return single_term_exponential(t_fit, *popt)
+    return returned_function
+
+
+def ExtrapolateHeatingCurve_2exp (measurements :pd.DataFrame, T_inf: float)-> Callable [[int], float]:
+    
+    """
+    Parameters:
+        pd.DataFrame:   DataFrame with the measurements, where first column is the time in minutes and second column is the temperature
+        float:          Final temperature of the heating curve
+        
+    Returns:    
+        Callable:       Function that extrapolates the heating curve at a given time"""
+
+
+    # -------------------------------------------------------------------
+    # 1) Define your two-term exponential model
+    # -------------------------------------------------------------------
+    def two_term_exponential(t, A, B, k1, k2):
+        """
+        Two-term exponential model for temperature approach.
+        T(t) = T_inf - A*exp(-k1*t) - B*exp(-k2*t)
+        
+        Interpretation:
+        - T_inf : final/steady temperature
+        - A, B  : amplitudes
+        - k1, k2: rate constants
+        """
+        return T_inf - A * np.exp(-k1 * t) - B * np.exp(-k2 * t)
+
+
+    # -------------------------------------------------------------------
+    # 2) Fit the two-term exponential model to the data
+    # -------------------------------------------------------------------
+    # We'll provide initial guesses (p0) for the parameters:
+    #   [ A, B, k1, k2]
+    p0 = [20.0,  5.0,  0.1,  0.01]  # just a rough guess
+
+    popt, _ = curve_fit(two_term_exponential, measurements[MeasurementFormat.TIMESTAMP], measurements[MeasurementFormat.TEMPERATURE], p0=p0)
+    # Fitted parameters: 
+    # A_fit, B_fit, k1_fit, k2_fit = popt
+
+    # -------------------------------------------------------------------
+    # 4) Create and return callable
+    # -------------------------------------------------------------------
+    def returned_function(t_fit):
+        return two_term_exponential(t_fit, *popt)
+    return returned_function
+
+    

@@ -7,7 +7,7 @@ from datetime import datetime
 
 from models.solvers import SimulateMeat
 from models.solvers import LogReduction
-from models.helpers import seconds_to_mmss, seconds_to_hhmm, update_progress_bar
+from models.helpers import seconds_to_hhmm_pretty, update_progress_bar
 from models.parameters import MeatSimulationParameters, LOG_REDUCTION_MIN_THRESHOLD
 
 # Allow acces to the models 
@@ -92,7 +92,7 @@ if st.sidebar.button("Run Simulation"):
     
     T_sol, time_points, second_stability_reached = SimulateMeat(msp, progress_callback=_update_progress)
     center_temperatures = T_sol[0, :]  # First row corresponds to T[0] (r = 0)
-    LR_total, LR_in_time, safety_instant = LogReduction(center_temperatures, msp.delta_time)
+    LR_total, LR_in_time, safety_instant_seconds = LogReduction(center_temperatures, msp.delta_time)
     current_simulation_bar.empty()
 
     # Prepare data for Streamlit line_chart
@@ -108,7 +108,7 @@ if st.sidebar.button("Run Simulation"):
 
     # Display the result
     if second_stability_reached is not None:
-        st.info(f"The piece of meat reaches thermal stability approximately after hh:mm {seconds_to_hhmm(second_stability_reached)}")
+        st.info(f"The piece of meat reaches thermal stability approximately after {seconds_to_hhmm_pretty(second_stability_reached)}")
     else:
         st.info("The center does not reach thermal stability within the simulated time.")
 
@@ -143,9 +143,9 @@ if st.sidebar.button("Run Simulation"):
             x=[second_stability_reached//60],
             y=[thermal_stability_threshold],
             mode='markers+text',
-            name=f"Stability approx. at {seconds_to_hhmm(second_stability_reached)}",
+            name=f"Thermal stability ",
             marker=dict(color='green', size=10),
-            text=f"{seconds_to_hhmm(second_stability_reached)}",
+            text=f"{seconds_to_hhmm_pretty(second_stability_reached)}",
             textposition="top center"
         ))
 
@@ -174,11 +174,11 @@ if st.sidebar.button("Run Simulation"):
     
     ######## Display the Pastorization info (Log Reduction)
     #######################################################
-    safety_instant_min = safety_instant / 60 if safety_instant is not None else None
+    safety_instant_min = safety_instant_seconds / 60 if safety_instant_seconds is not None else None
     if safety_instant_min is None:
         st.error("The meat does not reach acceptable healthy levels for eating during simulation time.")
     else:
-        st.success(f"The meat reaches acceptables healthy levels in hh:mm {seconds_to_hhmm(safety_instant)}, i.e., a 6-log reduction (99.9999% reduction of pathogens)")
+        st.success(f"The meat reaches acceptables healthy levels in {seconds_to_hhmm_pretty(safety_instant_seconds)}, i.e., 99.9999% reduction of pathogens")
     
     # Create the Plotly figure
     fig = go.Figure()
@@ -213,15 +213,15 @@ if st.sidebar.button("Run Simulation"):
     ))
 
     # Add a vertical line when the threshold is exceeded
-    if safety_instant is not None:
+    if safety_instant_seconds is not None:
         
         fig.add_trace(go.Scatter(
             x=[safety_instant_min],
             y=[LOG_REDUCTION_MIN_THRESHOLD],
             mode='markers+text',
-            name=f"{LOG_REDUCTION_MIN_THRESHOLD}-D reduction",
+            name=f"{LOG_REDUCTION_MIN_THRESHOLD}D reduction instant",
             marker=dict(color='yellow', size=14, symbol='star', line=dict(color='blue', width=2)),
-            text=f"{int(safety_instant_min)//60}h:{int(safety_instant_min)%60}m",
+            text=f"{seconds_to_hhmm_pretty(safety_instant_seconds)}",
             textposition="top center"
         ))
 
@@ -230,14 +230,14 @@ if st.sidebar.button("Run Simulation"):
         x=[time_points_minutes[0], time_points_minutes[-1]],
         y=[LOG_REDUCTION_MIN_THRESHOLD, LOG_REDUCTION_MIN_THRESHOLD],
         mode='lines',
-        name=f"Threshold = {LOG_REDUCTION_MIN_THRESHOLD}-D reduction",
+        name=f"Threshold = {LOG_REDUCTION_MIN_THRESHOLD}D reduction",
         line=dict(color='green', dash='dash')
     ))
 
     # Update layout for titles and labels
     fig.update_layout(
         title=dict(
-            text="Log Reduction (LR) of pathogens over Time",
+            text="Log reduction of pathogens",
             x=0.5,  # Center the title
             xanchor="center",  # Align the title anchor to the center,
             font=dict(
@@ -250,7 +250,7 @@ if st.sidebar.button("Run Simulation"):
             dtick=30,               # Interval for ticks (30 minutes)
             tickformat=".0f"        # Format tick labels to show integers only
         ),
-        yaxis=dict(title="Log Reduction (LR)"),
+        yaxis=dict(title="Log reduction (LR)"),
         legend_title="Legend",
     )
 

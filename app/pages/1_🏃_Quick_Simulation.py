@@ -7,7 +7,7 @@ from datetime import time, date, datetime, timedelta
 
 from models.solvers import SimulateMeat
 from models.solvers import LogReduction
-from models.helpers import seconds_to_mmss, update_progress_bar
+from models.helpers import update_progress_bar
 from models.parameters import MeatSimulationParameters, LOG_REDUCTION_MIN_THRESHOLD
 
 # Allow acces to the models 

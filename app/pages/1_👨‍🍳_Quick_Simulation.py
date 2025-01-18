@@ -160,13 +160,14 @@ if QUICK_SIMULATION_STATUS in st.session_state:
             y=[None],
             mode='markers',
             marker=dict(size=10, color='green', symbol='square', opacity=0.3),
-            name='Safety time interval'
+            name='Safety time interval',
+            showlegend=False
         ))
   
     # Update the layout
     fig.update_layout(
         title=dict(
-            text="🌡️ Temperature at the 🎯 center of the food",
+            text="Temperature at the 🎯 center of the food",
             x=0.5,  # Center the title
             xanchor="center",  # Align the title anchor to the center,
             font=dict(
@@ -180,7 +181,13 @@ if QUICK_SIMULATION_STATUS in st.session_state:
             tickformat="%H:%M"        # Format tick labels to show integers only
         ),
         yaxis=dict(title="Temperature (°C)"),
-        legend=dict(title="Legend")
+        legend=dict(
+            # title="Legend",
+            orientation="h",  # Horizontal orientation
+            x=0.5,           # Center horizontally
+            y=1.15,          # Position above the plot
+            xanchor="center" # Anchor horizontally to the center
+        ),
     )
 
     st.plotly_chart(fig, use_container_width=True)

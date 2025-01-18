@@ -124,7 +124,8 @@ if ADV_SIMULATION_STATUS in st.session_state:
             color=center_temperatures,  # Set color based on temperature
             colorscale='RdBu',  # Colorscale transitioning from blue to red
         ),
-        line=dict(color='rgba(0,0,0,0)')  # Make the line itself transparent (optional)
+        line=dict(color='rgba(0,0,0,0)'),  # Make the line itself transparent (optional)
+        showlegend=False
     ))
 
     # Plot the threshold temperature as a horizontal line
@@ -165,7 +166,15 @@ if ADV_SIMULATION_STATUS in st.session_state:
             tickformat=".0f"        # Format tick labels to show integers only
         ),
         yaxis=dict(title="Temperature (°C)"),
-        legend=dict(title="Legend")
+        legend=dict(
+            # title="Legend",
+            orientation="v",  # Horizontal orientation
+            #x=0.5, y=1.05, xanchor="center" 
+            x=1,              # Position at the far right
+            y=0.1,              # Position at the bottom
+            xanchor="right",  # Align legend to the right
+            yanchor="bottom"  # Align legend to the bottom
+        ),
     )
     
     # Render the Plotly figure in Streamlit
@@ -208,7 +217,8 @@ if ADV_SIMULATION_STATUS in st.session_state:
             color=colors,  # Use the gradient color list
             size=8,  # Marker size
         ),
-        line=dict(color='yellow')  # Line color (optional)
+        line=dict(color='yellow'),  # Line color (optional)
+        showlegend=False
     ))
 
     # Add a vertical line when the threshold is exceeded
@@ -250,7 +260,15 @@ if ADV_SIMULATION_STATUS in st.session_state:
             tickformat=".0f"        # Format tick labels to show integers only
         ),
         yaxis=dict(title="Log reduction (LR)"),
-        legend_title="Legend",
+        legend=dict(
+            # title="Legend",
+            orientation="v",  # Horizontal orientation
+            #x=0.5, y=1.05, xanchor="center" 
+            x=1,              # Position at the far right
+            y=0.1,              # Position at the bottom
+            xanchor="right",  # Align legend to the right
+            yanchor="bottom"  # Align legend to the bottom
+        ),
     )
 
     # Render the Plotly chart in Streamlit

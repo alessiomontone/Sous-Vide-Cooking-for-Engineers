@@ -12,7 +12,7 @@
             "module": "streamlit",
             "args": [
                 "run",
-                "./app/🏠 Home.py", // Replace with the path to your Streamlit script
+                "./app/Cooking_for_Engineers.py", // Replace with the path to your Streamlit script
                 "--server.port=8501", // Optional: specify port
                 "--server.address=localhost" // Optional: allow access from other devices
             ],

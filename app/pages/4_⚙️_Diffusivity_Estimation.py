@@ -11,12 +11,6 @@ from models.solvers import SimulateMeat
 from models.solvers import LogReduction
 from models.helpers import update_progress_bar
 
-# Allow acces to the models 
-import sys
-from pathlib import Path
-# Add the parent directory to the sys.path
-sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
-
 st.set_page_config(
     page_title="Sous Vide simulation tool",
     page_icon="♨️",

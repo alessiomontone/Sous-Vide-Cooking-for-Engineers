@@ -186,7 +186,8 @@ if QUICK_SIMULATION_STATUS in st.session_state:
             orientation="h",  # Horizontal orientation
             x=0.5,           # Center horizontally
             y=1.15,          # Position above the plot
-            xanchor="center" # Anchor horizontally to the center
+            xanchor="center", # Anchor horizontally to the center
+            bgcolor="rgba(0, 0, 0, 0)"  # Transparent background
         ),
     )
 

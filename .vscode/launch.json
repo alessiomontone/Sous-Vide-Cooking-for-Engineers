@@ -1,0 +1,23 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "Run Sous Vide cooking 4 Eng",
+            "type": "python",
+            "request": "launch",
+            "module": "streamlit",
+            "args": [
+                "run",
+                "./app/Cooking_for_Engineers.py", // Replace with the path to your Streamlit script
+                "--server.port=8501", // Optional: specify port
+                "--server.address=localhost" // Optional: allow access from other devices
+            ],
+            "console": "integratedTerminal", // Use the integrated terminal for output
+            "justMyCode": true
+        }
+    ]
+}

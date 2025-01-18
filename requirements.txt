@@ -4,4 +4,8 @@ scipy
 matplotlib
 plotly
 ipykernel
+openpyxl
+sphinx
+sphinx-rtd-theme
 streamlit
+xlsxwriter

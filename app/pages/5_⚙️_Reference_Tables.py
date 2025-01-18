@@ -23,7 +23,9 @@ st.set_page_config(
 st.title("⚙️ Reference tables")
 
 intro = st.markdown("""
-                    This page will generate reference tables regarding Sous-Vide heating and pasteurization iterating through different parameter values:
+                    This page will generate reference tables regarding Sous-Vide heating and pasteurization iterating through different parameter values:\\
+                    👈 Parameters can be set in the sidebar.
+
                     * **Heating time** simulates required time to reach thermal stability depending on different thicknesses and shapes of the meat
                         (i.e., it will recreate Table 1 of Baldwin's paper)
                     * **Pasteurization** simulates required time to reach pasteurization depending on different thicknesses and Roner temperatures 
@@ -68,7 +70,7 @@ if option == "Heating":
         st.sidebar.warning("Please select at least one shape", icon="⚠️")
     
     if "slab" in shapes:
-        correct_beta_for_large_slabs = st.sidebar.checkbox(label="", value = False, 
+        correct_beta_for_large_slabs = st.sidebar.checkbox(label="Correct Beta for large values of slab thickenss (>30mm)", value = False, 
                                                         help="For computaton of Table 1 in Baldwin's paper it has not been used")
     else:
         correct_beta_for_large_slabs = None
@@ -80,7 +82,7 @@ if option == "Heating":
     heat_transfer = st.sidebar.number_input("[h] Surface Heat Transfer Coefficient (W/m²-K):",min_value=1, value=95, step=1)
     thermal_conductivity = st.sidebar.number_input("[k] Thermal Conductivity (W/m-K):",min_value=0.01, value=0.48, step=0.01, format="%.2f")
     if len(shapes)>0:
-        if st.sidebar.button("Run heating simulations"):
+        if st.sidebar.button("Run heating simulations", use_container_width=True):
             intro.empty()    
             # Initialize parameters
             msp = MeatSimulationParameters()
@@ -115,9 +117,13 @@ if option == "Heating":
                     
                     # update current iteration progress bar
                     current_simulation_bar.empty()
-                    
-                    st.toast(f"Simulation for {curr_shape}-{curr_thickness}mm completed and thermal stability found at {seconds_to_hhmm_pretty(second_stability_reached)}", icon="ℹ️")
-                    dict_result[curr_shape] = seconds_to_hhmm_pretty(second_stability_reached)
+                    if second_stability_reached is not None:
+                        st.toast(f"Simulation for {curr_shape}-{curr_thickness}mm completed and thermal stability reached at {seconds_to_hhmm_pretty(second_stability_reached)}", icon="ℹ️")
+                        dict_result[curr_shape] = seconds_to_hhmm_pretty(second_stability_reached)
+                    else:
+                        st.toast(f"Simulation for {curr_shape}-{curr_thickness}mm completed and thermal stability has not been reached", icon="ℹ️")
+                        dict_result[curr_shape] = None
+
                     curr_idx += 1
                 result.append(dict_result)
             overall_progress_bar.empty()
@@ -152,7 +158,7 @@ elif option == "Pasteurization":
     heat_transfer = st.sidebar.number_input("[h] Surface Heat Transfer Coefficient (W/m²-K):", value=95, step=1)
     thermal_conductivity = st.sidebar.number_input("[k] Thermal Conductivity (W/m-K):", value=0.48, step=0.01, format="%.2f")
 
-    if st.sidebar.button("Run pasteurization simulations"):
+    if st.sidebar.button("Run pasteurization simulations", use_container_width=True):
         intro.empty()
         msp = MeatSimulationParameters()
         msp.T_initial = initial_temperature
@@ -190,9 +196,12 @@ elif option == "Pasteurization":
                 
                 # update current iteration progress bar
                 current_simulation_bar.empty()
-                
-                st.toast(f"Simulation for {curr_thickness}mm-{curr_temp}°C completed and thermal stability found at {seconds_to_hhmm_pretty(safety_instant)}", icon="ℹ️")
-                dict_result[f"{curr_temp}°C"] = seconds_to_hhmm_pretty(safety_instant)
+                if safety_instant is not None:
+                    st.toast(f"Simulation for {curr_thickness}mm-{curr_temp}°C completed and thermal stability reached at {seconds_to_hhmm_pretty(safety_instant)}", icon="ℹ️")
+                    dict_result[f"{curr_temp}°C"] = seconds_to_hhmm_pretty(safety_instant)
+                else:
+                    st.toast(f"Simulation for {curr_thickness}mm-{curr_temp}°C completed and thermal stability has not been reached", icon="ℹ️")
+                    dict_result[f"{curr_temp}°C"] = None
                 curr_idx += 1
             result.append(dict_result)
         

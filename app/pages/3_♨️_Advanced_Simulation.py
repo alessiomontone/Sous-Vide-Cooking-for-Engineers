@@ -19,6 +19,12 @@ st.set_page_config(
 
 st.title("♨️ Advanced Simulation")
 
+intro = st.markdown("""
+            Here you can simulate sous vide cooking, by adjusting all the model parameters in the sidebar (👈). \\
+            \\
+            The simulation will show you the details of temperature evolution in the meat and the pasteurization process.
+            """)
+
 ## Sidebar - Input parameters for the simulation
 ################################################
 
@@ -68,7 +74,8 @@ thermal_conductivity = st.sidebar.number_input("[k] Thermal Conductivity (W/m-K)
 
 
 # Display Simulation results
-if st.sidebar.button("Run Simulation"):
+if st.sidebar.button("Run Simulation", use_container_width=True):
+    intro.empty()
     msp = MeatSimulationParameters()
     msp.define_meat_shape(shape=shape,thickness_mm=thickness, thick_slabs_beta_correction=correct_beta_for_large_slabs)
     msp.T_initial = initial_temperature
@@ -91,8 +98,8 @@ if st.sidebar.button("Run Simulation"):
 
     st.session_state[ADV_SIMULATION_STATUS] = (msp, T_sol, time_points, second_stability_reached,center_temperatures, LR_total, LR_in_time, safety_instant_seconds )
 
-if ADV_SIMULATION_STATUS in st.session_state:
-
+if ADV_SIMULATION_STATUS in st.session_state:    
+    intro.empty()
     # Restore status
     (msp, T_sol, time_points, second_stability_reached,center_temperatures, LR_total, LR_in_time, safety_instant_seconds ) = st.session_state[ADV_SIMULATION_STATUS]
     # Prepare data for Streamlit line_chart
@@ -173,7 +180,8 @@ if ADV_SIMULATION_STATUS in st.session_state:
             x=1,              # Position at the far right
             y=0.1,              # Position at the bottom
             xanchor="right",  # Align legend to the right
-            yanchor="bottom"  # Align legend to the bottom
+            yanchor="bottom",  # Align legend to the bottom
+            bgcolor="rgba(0, 0, 0, 0)"  # Transparent background
         ),
     )
     
@@ -267,7 +275,8 @@ if ADV_SIMULATION_STATUS in st.session_state:
             x=1,              # Position at the far right
             y=0.1,              # Position at the bottom
             xanchor="right",  # Align legend to the right
-            yanchor="bottom"  # Align legend to the bottom
+            yanchor="bottom",  # Align legend to the bottom
+            bgcolor="rgba(0, 0, 0, 0)"  # Transparent background
         ),
     )
 

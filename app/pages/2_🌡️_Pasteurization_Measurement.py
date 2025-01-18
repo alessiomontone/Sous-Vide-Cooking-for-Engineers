@@ -88,6 +88,7 @@ st.sidebar.download_button(
     data=excel_file,
     file_name="dataframe.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    use_container_width=True
 )
 
 if len(edited_df)> 2:

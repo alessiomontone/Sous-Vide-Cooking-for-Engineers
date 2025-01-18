@@ -21,7 +21,8 @@ st.set_page_config(
 st.title("⚙️ Diffusivity Estimation")
 
 intro = st.markdown("""
-                    Here you can estimate the thermal diffusivity of a piece of meat by simulating the heating process with **different values of α to be checked against actual measured heating time**.
+                    Here you can estimate the thermal diffusivity of a piece of meat by simulating the heating process with **different values of α to be checked against actual measured heating time**. \\
+                    👈 Parameters can be set in the sidebar.
                     
                     E.g., for a 30mm slab heating from 5.0 °C to 58.0°C (given all the other standard parameters), can be simulated here for a range of α values from 1.00 to 2.00;
                     Looking at the simulation result, if actual measures with meat thermometer show that the meat reached 58.0°C in 100 minutes,  then the thermal diffusivity α is around 1.30 x 10⁻⁷ m²/s.
@@ -58,7 +59,7 @@ thermal_conductivity = st.sidebar.number_input("[k] Thermal Conductivity (W/m-K)
 # Compute Simulation
 ####################
 
-if st.sidebar.button("Run Simulation"):
+if st.sidebar.button("Run Simulation", use_container_width=True):
     intro.empty()
     # with st.spinner("Running simulation..."):
     overall_progress_bar = st.progress(0, "Running simulations...")

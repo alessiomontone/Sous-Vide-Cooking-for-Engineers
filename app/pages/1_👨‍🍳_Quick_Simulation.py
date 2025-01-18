@@ -10,46 +10,56 @@ from models.solvers import LogReduction
 from models.helpers import update_progress_bar
 from models.parameters import MeatSimulationParameters, LOG_REDUCTION_MIN_THRESHOLD
 
-QUICK_SIMULATION_STATUS = "QuickSim_Status"
+QUICK_SIMULATION_INPUT = "QuickSim_Input"
+QUICK_SIMULATION_RESULT = "QuickSim_Result"
+class QuickSimulationStep:
+    INPUT = "QuickSim_Step_Input"
+    COMPUTE = "QuickSim_Step_Compute"
+    RESULTS = "QuickSim_Step.Results"
+
+QUICK_SIMULATION_STEP_STATUS = "QuickSim_Step_Status"
+
+
 st.set_page_config(
     page_title="Sous Vide simulation tool",
     page_icon="♨️",
 )
 
-st.title("👨‍🍳 Quick Simulation")
-
-intro = st.markdown("""
-            Here you can rapidly simulate sous vide cooking, just choose the parameters from the sidebar on the left of the page.
-            The simulation will show you the temperature evolution at the center of the meat and when the food can be safely consumed.
-            """)
 
 ## Sidebar - Input parameters for the simulation
 ################################################
+if st.session_state.get(QUICK_SIMULATION_STEP_STATUS,QuickSimulationStep.INPUT) == QuickSimulationStep.INPUT:
+    st.title("👨‍🍳 Quick Simulation")
 
-st.sidebar.header("👨‍🍳 Parameters")
+    st.markdown("""
+                Here you can rapidly simulate sous vide cooking, just choose the parameters. \\
+                The simulation will show you the temperature evolution and when the food can be safely consumed.
+                """)
+    #st.header("👨‍🍳 Parameters")
 
-thickness = st.sidebar.number_input("Thickness (mm):", min_value=5, value=20, step=5)
+    thickness = st.number_input("Thickness (mm):", min_value=5, value=20, step=5)
 
-shape_options = {
-    "🥩 Slab": "slab",
-    "🍖 Cylinder": "cylinder",
-    "🟤 Sphere": "sphere"
-}
-shape = shape_options[st.sidebar.selectbox("Shape:", shape_options.keys(), help="The shape of the piece of the meat that is being cooked")]
+    shape_options = {
+        "🥩 Slab": "slab",
+        "🍖 Cylinder": "cylinder",
+        "🟤 Sphere": "sphere"
+    }
+    shape = shape_options[st.selectbox("Shape:", shape_options.keys(), help="The shape of the piece of the meat that is being cooked")]
+    start_datetime = st.time_input("Starting time (h:mm):", value="now", help="The time of the day at which the cooking is expected to start")
+    initial_temperature = st.number_input("Food Initial Temperature (°C):", value=5.0, step=0.5, format="%.1f")
+    roner_temperature = st.number_input("Roner Temperature (°C):",min_value=54.0, value=58.0, step=0.5, format="%.1f")
 
-start_datetime = st.sidebar.time_input("Starting time (h:mm):", value="now", help="The time of the day at which the cooking is expected to start")
+    if st.button("Run Simulation", use_container_width=True):
+        st.session_state[QUICK_SIMULATION_STEP_STATUS] = QuickSimulationStep.COMPUTE
+        st.session_state[QUICK_SIMULATION_INPUT] = (thickness, shape, start_datetime, initial_temperature, roner_temperature)
+        st.rerun()
 
-initial_temperature = st.sidebar.number_input("Food Initial Temperature (°C):", value=5.0, step=0.5, format="%.1f")
-
-roner_termperature = st.sidebar.number_input("Roner Temperature (°C):",min_value=54.0, value=58.0, step=0.5, format="%.1f")
-
-# Run simulation Simulation results
-if st.sidebar.button("Run Simulation"):
-    intro.empty()
+if st.session_state.get(QUICK_SIMULATION_STEP_STATUS) == QuickSimulationStep.COMPUTE:
+    (thickness, shape, start_datetime, initial_temperature, roner_temperature) = st.session_state[QUICK_SIMULATION_INPUT]
     msp = MeatSimulationParameters()
     msp.define_meat_shape(shape=shape,thickness_mm=thickness)
     msp.T_initial = initial_temperature
-    msp.T_fluid = roner_termperature
+    msp.T_fluid = roner_temperature
     # msp.simulation_hours => TODO: Iterate over the hours
     
     for hour in [4,6,12,18,24]:
@@ -66,7 +76,8 @@ if st.sidebar.button("Run Simulation"):
         LR_total, LR_in_time, safety_instant = LogReduction(center_temperatures, msp.delta_time)
         
         # Saving state
-        st.session_state[QUICK_SIMULATION_STATUS] = (msp, T_sol, time_points, second_stability_reached,center_temperatures, LR_total, LR_in_time, safety_instant)
+        st.session_state[QUICK_SIMULATION_RESULT] = (msp, start_datetime, T_sol, time_points, second_stability_reached,center_temperatures, LR_total, LR_in_time, safety_instant)
+        st.session_state[QUICK_SIMULATION_STEP_STATUS] = QuickSimulationStep.RESULTS
 
         if safety_instant is not None:
             break
@@ -74,11 +85,10 @@ if st.sidebar.button("Run Simulation"):
             st.toast("No safety level reached yet... increasing simulation time", icon="⏳")
     
 # Plot simulation results
-if QUICK_SIMULATION_STATUS in st.session_state:
-    
-    intro.empty()
+#if QUICK_SIMULATION_RESULT in st.session_state:
+if st.session_state.get(QUICK_SIMULATION_STEP_STATUS) == QuickSimulationStep.RESULTS:
     # Restore status
-    (msp, T_sol, time_points, second_stability_reached,center_temperatures, LR_total, LR_in_time, safety_instant) = st.session_state[QUICK_SIMULATION_STATUS]
+    (msp, start_datetime, T_sol, time_points, second_stability_reached,center_temperatures, LR_total, LR_in_time, safety_instant) = st.session_state[QUICK_SIMULATION_RESULT]
 
     ######## Display the temporal evolution of the Center
     #####################################################
@@ -167,7 +177,7 @@ if QUICK_SIMULATION_STATUS in st.session_state:
     # Update the layout
     fig.update_layout(
         title=dict(
-            text="Temperature at the 🎯 center of the food",
+            text="Temperature int the food center 🎯",
             x=0.5,  # Center the title
             xanchor="center",  # Align the title anchor to the center,
             font=dict(
@@ -192,8 +202,14 @@ if QUICK_SIMULATION_STATUS in st.session_state:
     )
 
     st.plotly_chart(fig, use_container_width=True)
-    
     st.markdown("Simulation parameters here 👉", help=f"```{msp.to_monospace_str()}```")
+    
+    if st.button("Clear Simulation", use_container_width=True):
+        st.session_state[QUICK_SIMULATION_STEP_STATUS] = QuickSimulationStep.INPUT
+        st.session_state[QUICK_SIMULATION_INPUT] = None
+        st.session_state[QUICK_SIMULATION_RESULT] = None
+        st.rerun()
+        
     
 
     

@@ -10,6 +10,8 @@ from models.solvers import LogReduction
 from models.helpers import seconds_to_hhmm_pretty, update_progress_bar
 from models.parameters import MeatSimulationParameters, LOG_REDUCTION_MIN_THRESHOLD
 
+ADV_SIMULATION_STATUS = "AdvSim_Status"
+
 st.set_page_config(
     page_title="Sous Vide simulation tool",
     page_icon="♨️",
@@ -75,8 +77,6 @@ if st.sidebar.button("Run Simulation"):
     msp.alpha = thermal_diffusivity * 1e-7
     msp.h = heat_transfer
     msp.k = thermal_conductivity
-    r_values = msp.list_radius_values
-    thermal_stability_threshold = msp.thermal_stability_threshold
     
     current_simulation_bar = st.progress(0, text=f"Simulating...")
     iteration_start_datetime = datetime.now()
@@ -89,9 +89,14 @@ if st.sidebar.button("Run Simulation"):
     LR_total, LR_in_time, safety_instant_seconds = LogReduction(center_temperatures, msp.delta_time)
     current_simulation_bar.empty()
 
+    st.session_state[ADV_SIMULATION_STATUS] = (msp, T_sol, time_points, second_stability_reached,center_temperatures, LR_total, LR_in_time, safety_instant_seconds )
+
+if ADV_SIMULATION_STATUS in st.session_state:
+
+    # Restore status
+    (msp, T_sol, time_points, second_stability_reached,center_temperatures, LR_total, LR_in_time, safety_instant_seconds ) = st.session_state[ADV_SIMULATION_STATUS]
     # Prepare data for Streamlit line_chart
     time_points_minutes = time_points / 60  # Convert seconds to minutes
-        
 
     ######## Display the temporal evolution of the Center
     #####################################################
@@ -125,7 +130,7 @@ if st.sidebar.button("Run Simulation"):
     # Plot the threshold temperature as a horizontal line
     fig.add_trace(go.Scatter(
         x=[time_points_minutes[0], time_points_minutes[-1]],
-        y=[thermal_stability_threshold, thermal_stability_threshold],
+        y=[msp.thermal_stability_threshold, msp.thermal_stability_threshold],
         mode='lines',
         name="0.5°C below final temperature",
         line=dict(color='red', dash='dash')
@@ -135,7 +140,7 @@ if st.sidebar.button("Run Simulation"):
     if second_stability_reached is not None:
         fig.add_trace(go.Scatter(
             x=[second_stability_reached//60],
-            y=[thermal_stability_threshold],
+            y=[msp.thermal_stability_threshold],
             mode='markers+text',
             name=f"Thermal stability ",
             marker=dict(color='green', size=10),
@@ -270,7 +275,7 @@ if st.sidebar.button("Run Simulation"):
             rgba_color = f"rgba({color[0]*255},{color[1]*255},{color[2]*255},{color[3]})"
             fig.add_trace(
                 go.Scatter(
-                    x=r_values*1000,
+                    x=msp.list_radius_values*1000,
                     y=T_sol[:, i],
                     mode='lines',
                     name=f"{int(time_points[i] // 3600):02d}h:{int((time_points[i] % 3600) // 60):02d}m",

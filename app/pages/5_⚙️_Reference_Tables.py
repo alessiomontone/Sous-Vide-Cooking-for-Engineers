@@ -11,6 +11,9 @@ from models.solvers import SimulateMeat
 from models.solvers import LogReduction
 from models.helpers import seconds_to_hhmm_pretty, update_progress_bar
 
+REFERENCE_TABLE_TYPE_STATUS = "RefTable_type_Status"
+REFERENCE_TABLE_STATUS = "RefTable_Status"
+EMPTY_SELECTION = " "
 
 st.set_page_config(
     page_title="Sous Vide simulation tool",
@@ -32,23 +35,22 @@ intro = st.markdown("""
 st.sidebar.header("⚙️ Parameters")
 
 # Initialize session state to track user's choice
-EMPTY_SELECTION = " "
-if "selected_reftable" not in st.session_state:
-    st.session_state.selected_reftable = EMPTY_SELECTION
+if REFERENCE_TABLE_TYPE_STATUS not in st.session_state:
+    st.session_state[REFERENCE_TABLE_TYPE_STATUS] = EMPTY_SELECTION
 
 # Dropdown with dynamic options
-if st.session_state.selected_reftable == EMPTY_SELECTION:
+if st.session_state[REFERENCE_TABLE_TYPE_STATUS] == EMPTY_SELECTION:
     options = [EMPTY_SELECTION, "Heating", "Pasteurization"]  # Include placeholder
 else:
     options = ["Heating", "Pasteurization"]  # Remove placeholder after selection
 
 # Render the dropdown
-option = st.sidebar.selectbox("Choose a Table:", options, key="selected_reftable")
+option = st.sidebar.selectbox("Choose a Table:", options, key=REFERENCE_TABLE_TYPE_STATUS)
 
 st.sidebar.markdown("---")
 
-## Heating reference table generation
-#####################################
+## Run Simulations
+##################
 
 if option == "Heating":
     thickness = st.sidebar.slider("Thickness (mm):", min_value=5,max_value=115, value=(5,115), step=5)
@@ -119,10 +121,9 @@ if option == "Heating":
                     curr_idx += 1
                 result.append(dict_result)
             overall_progress_bar.empty()
-            
-            intro.empty()
-            st.write("Estimated heating time:")
-            st.dataframe(pd.DataFrame(result))
+
+            message = "Estimated heating time:"
+            st.session_state[REFERENCE_TABLE_STATUS] = (message, pd.DataFrame(result))
 
 ## Pasteurization reference table generation
 ############################################
@@ -196,6 +197,15 @@ elif option == "Pasteurization":
             result.append(dict_result)
         
         overall_progress_bar.empty()
-        intro.empty()
-        st.write("Estimated pasteurization time:")
-        st.dataframe(pd.DataFrame(result))
+        message = "Estimated pasteurization time:"
+        st.session_state[REFERENCE_TABLE_STATUS] = (message, pd.DataFrame(result))
+
+# Display simulation result
+###########################
+
+if REFERENCE_TABLE_STATUS in st.session_state:
+
+    intro.empty()
+    (message, df_result) = st.session_state[REFERENCE_TABLE_STATUS]
+    st.write(message)
+    st.dataframe(df_result)

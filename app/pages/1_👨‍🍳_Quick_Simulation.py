@@ -75,8 +75,9 @@ if st.sidebar.button("Run Simulation"):
     
 # Plot simulation results
 if QUICK_SIMULATION_STATUS in st.session_state:
+    
     intro.empty()
-    # Restore
+    # Restore status
     (msp, T_sol, time_points, second_stability_reached,center_temperatures, LR_total, LR_in_time, safety_instant) = st.session_state[QUICK_SIMULATION_STATUS]
 
     ######## Display the temporal evolution of the Center

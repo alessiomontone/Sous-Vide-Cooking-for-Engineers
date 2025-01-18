@@ -16,7 +16,7 @@ st.set_page_config(
     page_icon="♨️",
 )
 
-st.title("🌡️ Evalute Pasteurization progress")
+st.title("🌡️ Check pasteurization progress")
 
 ## Sidebar - Input parameters for the simulation
 ################################################

@@ -11,6 +11,8 @@ from models.solvers import SimulateMeat
 from models.solvers import LogReduction
 from models.helpers import update_progress_bar
 
+DIFFUSIVITY_ESTIMATION_STATUS = "DiffusivityEstimation_Status"
+
 st.set_page_config(
     page_title="Sous Vide simulation tool",
     page_icon="♨️",
@@ -53,14 +55,13 @@ final_time = st.sidebar.number_input("Simulation Time (h):", min_value=1, value=
 heat_transfer = st.sidebar.number_input("[h] Surface Heat Transfer Coefficient (W/m²-K):",min_value=1, value=95, step=1)
 thermal_conductivity = st.sidebar.number_input("[k] Thermal Conductivity (W/m-K):",min_value=0.01, value=0.48, step=0.01, format="%.2f")
 
-# Display Simulation results
+# Compute Simulation
+####################
+
 if st.sidebar.button("Run Simulation"):
     intro.empty()
-    
     # with st.spinner("Running simulation..."):
     overall_progress_bar = st.progress(0, "Running simulations...")
-
-
     
     msp = MeatSimulationParameters()
     msp.define_meat_shape(shape=shape,thickness_mm=thickness)
@@ -73,7 +74,6 @@ if st.sidebar.button("Run Simulation"):
     alphas = np.linspace (start_thermal_diffusivity * 1e-7, end_thermal_diffusivity * 1e-7, num_simulations)
     results = []
     
- 
     for index, a in enumerate(alphas):
         msp.alpha = a
         
@@ -92,9 +92,17 @@ if st.sidebar.button("Run Simulation"):
         overall_progress_bar.progress(progress_percentage,text=f"Performed simulations {index +1}/{len(alphas)}")
         
     overall_progress_bar.empty()
+    df_results = pd.DataFrame (results)
+    st.session_state[DIFFUSIVITY_ESTIMATION_STATUS] = (msp, df_results)
+
+# Display results
+#################
+
+if DIFFUSIVITY_ESTIMATION_STATUS in st.session_state:
+    intro.empty()
+    (msp, df_results) = st.session_state[DIFFUSIVITY_ESTIMATION_STATUS]
 
     # Plot the results using Plotly Go
-    df_results = pd.DataFrame (results)
     if (df_results.shape[0]>0):
         fig = go.Figure()
 

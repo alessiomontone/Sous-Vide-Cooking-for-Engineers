@@ -66,7 +66,7 @@ if not pd.api.types.is_numeric_dtype(edited_df[MeasurementFormat.TEMPERATURE]):
     st.error("Temperature must be a numeric value.")
 
 # Update the dataframe in session state
-#st.session_state.dfmeasurements = edited_df
+st.session_state.dfmeasurements = edited_df
 
 st.sidebar.markdown("---")
 

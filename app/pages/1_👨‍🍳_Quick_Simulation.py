@@ -15,7 +15,7 @@ st.set_page_config(
     page_icon="♨️",
 )
 
-st.title("🏃 Quick Simulation")
+st.title("👨‍🍳 Quick Simulation")
 
 intro = st.markdown("""
             Here you can rapidly simulate sous vide cooking, just choose the parameters from the sidebar on the left of the page.
@@ -25,7 +25,7 @@ intro = st.markdown("""
 ## Sidebar - Input parameters for the simulation
 ################################################
 
-st.sidebar.header("🏃 Parameters")
+st.sidebar.header("👨‍🍳 Parameters")
 
 thickness = st.sidebar.number_input("Thickness (mm):", min_value=5, value=20, step=5)
 

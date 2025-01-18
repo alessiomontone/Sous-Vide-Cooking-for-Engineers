@@ -16,7 +16,7 @@ st.set_page_config(
     page_icon="♨️",
 )
 
-st.title("🌡️ Check pasteurization progress")
+st.title("🌡️ Check pasteurization")
 
 ## Sidebar - Input parameters for the simulation
 ################################################
@@ -24,8 +24,6 @@ st.title("🌡️ Check pasteurization progress")
 st.sidebar.header("🌡️ Parameters")
 # Upload an Excel file #########
 ################################
-roner_termperature = st.sidebar.number_input("Roner Temperature (°C):", min_value=54.0, value=58.0, step=0.5, format="%.1f")
-extrapolated_minutes = st.sidebar.number_input("Estimated Time (h):",min_value=1, value=1, step=1) *60
 
 uploaded_file = st.sidebar.file_uploader("Load measurements from Excel file", type=["xlsx", "xls"],accept_multiple_files=False)
 
@@ -41,17 +39,26 @@ if uploaded_file is not None:
     except Exception as e:
         st.sidebar.error(f"Error loading Excel file: {e}")
 
-# Initialize the dataframe in session state and display howto
 
+# Initialize the dataframe in session state and display howto
 if "dfmeasurements" not in st.session_state:
     intro = st.markdown("""
                     This page will allow to evaluate the pasteurization progress of a meat heating starting from direct temperature measurements of the center of the food. 
                     """)
-    st.info("Please upload an Excel file with the measurements or start adding measurements manually.")
+    st.info("Please upload an Excel file with the measurements (👈) or start adding measurements manually (👇).")
     st.session_state.dfmeasurements = GetEmptyMeasurementDataFrame()
 
+## Input Parametes
+col1, col2 = st.columns([1, 1])  # Create columns with relative widths
+with col1:  # Place the button in the center column
+    roner_termperature = st.number_input("Roner Temperature (°C):", min_value=54.0, value=58.0, step=0.5, format="%.1f")
+with col2: 
+    extrapolated_minutes = st.number_input("Analized Time (h):",min_value=1, value=5, step=1) *60
+
+st.markdown("---")
+
 # Display the editable dataframe
-st.subheader("Temperature measurements")
+st.write("Measurements")
 edited_df = st.data_editor(
     st.session_state.dfmeasurements,
     use_container_width=True,  # Expand to fit the container
@@ -67,8 +74,6 @@ if not pd.api.types.is_numeric_dtype(edited_df[MeasurementFormat.TEMPERATURE]):
 
 # Update the dataframe in session state
 st.session_state.dfmeasurements = edited_df
-
-st.sidebar.markdown("---")
 
 # Create a download button for the DataFrame as an Excel file
 #############################################################

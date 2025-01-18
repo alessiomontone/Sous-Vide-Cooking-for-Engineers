@@ -6,7 +6,7 @@ from matplotlib import colormaps
 from matplotlib.colors import Normalize
 import plotly.graph_objects as go
 
-from models.helpers import seconds_to_hhmm_pretty, MeasurementFormat
+from models.helpers import GetEmptyMeasurementDataFrame, seconds_to_hhmm_pretty, MeasurementFormat
 from models.solvers import ExtrapolateHeatingCurve_1exp, ExtrapolateHeatingCurve_2exp, LogReduction
 from models.parameters import LOG_REDUCTION_MIN_THRESHOLD
 
@@ -42,15 +42,13 @@ if uploaded_file is not None:
         st.sidebar.error(f"Error loading Excel file: {e}")
 
 # Initialize the dataframe in session state and display howto
+
 if "dfmeasurements" not in st.session_state:
     intro = st.markdown("""
                     This page will allow to evaluate the pasteurization progress of a meat heating starting from direct temperature measurements of the center of the food. 
                     """)
     st.info("Please upload an Excel file with the measurements or start adding measurements manually.")
-    st.session_state.dfmeasurements = pd.DataFrame({
-        MeasurementFormat.TIMESTAMP: [0],  # Default timestamp placeholder
-        MeasurementFormat.TEMPERATURE: [0.0],      # Default temperature placeholder
-    })
+    st.session_state.dfmeasurements = GetEmptyMeasurementDataFrame()
 
 # Display the editable dataframe
 st.subheader("Temperature measurements")
@@ -66,6 +64,11 @@ if not pd.api.types.is_numeric_dtype(edited_df[MeasurementFormat.TIMESTAMP]):
 
 if not pd.api.types.is_numeric_dtype(edited_df[MeasurementFormat.TEMPERATURE]):
     st.error("Temperature must be a numeric value.")
+
+# Update the dataframe in session state
+#st.session_state.dfmeasurements = edited_df
+
+st.sidebar.markdown("---")
 
 # Create a download button for the DataFrame as an Excel file
 #############################################################
@@ -86,9 +89,6 @@ st.sidebar.download_button(
     file_name="dataframe.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 )
-
-# Update the dataframe in session state
-st.session_state.dfmeasurements = edited_df
 
 if len(edited_df)> 2:
     try: 

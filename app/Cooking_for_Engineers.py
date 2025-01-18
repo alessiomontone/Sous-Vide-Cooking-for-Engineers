@@ -20,10 +20,6 @@ st.markdown("""
             * **<a href='/Quick_Simulation' target='_self'>🏃 Quick Simulation</a>** would be fine: compute time required to safely sous-vide cook a piece of meat with conservative presets            
             * **🌡️ Pasteurization Measurements** would be usefult while cooking and collecting real time temperature measurements and evalute pasteurization progress
             """,unsafe_allow_html=True)
-
-
-
-
             
 
 st.markdown("""

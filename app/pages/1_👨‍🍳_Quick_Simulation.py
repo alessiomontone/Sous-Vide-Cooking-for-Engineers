@@ -10,6 +10,7 @@ from models.solvers import LogReduction
 from models.helpers import update_progress_bar
 from models.parameters import MeatSimulationParameters, LOG_REDUCTION_MIN_THRESHOLD
 
+QUICK_SIMULATION_STATUS = "QuickSim_Status"
 st.set_page_config(
     page_title="Sous Vide simulation tool",
     page_icon="♨️",
@@ -42,15 +43,13 @@ initial_temperature = st.sidebar.number_input("Food Initial Temperature (°C):",
 
 roner_termperature = st.sidebar.number_input("Roner Temperature (°C):",min_value=54.0, value=58.0, step=0.5, format="%.1f")
 
-# Display Simulation results
+# Run simulation Simulation results
 if st.sidebar.button("Run Simulation"):
     intro.empty()
     msp = MeatSimulationParameters()
     msp.define_meat_shape(shape=shape,thickness_mm=thickness)
     msp.T_initial = initial_temperature
     msp.T_fluid = roner_termperature
-    r_values = msp.list_radius_values
-    thermal_stability_threshold = msp.thermal_stability_threshold
     # msp.simulation_hours => TODO: Iterate over the hours
     
     for hour in [4,6,12,18,24]:
@@ -66,11 +65,19 @@ if st.sidebar.button("Run Simulation"):
         center_temperatures = T_sol[0, :]  # First row corresponds to T[0] (r = 0)
         LR_total, LR_in_time, safety_instant = LogReduction(center_temperatures, msp.delta_time)
         
+        # Saving state
+        st.session_state[QUICK_SIMULATION_STATUS] = (msp, T_sol, time_points, second_stability_reached,center_temperatures, LR_total, LR_in_time, safety_instant)
+
         if safety_instant is not None:
             break
         else:
             st.toast("No safety level reached yet... increasing simulation time", icon="⏳")
     
+# Plot simulation results
+if QUICK_SIMULATION_STATUS in st.session_state:
+    intro.empty()
+    # Restore
+    (msp, T_sol, time_points, second_stability_reached,center_temperatures, LR_total, LR_in_time, safety_instant) = st.session_state[QUICK_SIMULATION_STATUS]
 
     ######## Display the temporal evolution of the Center
     #####################################################
@@ -115,7 +122,7 @@ if st.sidebar.button("Run Simulation"):
     if stability_reached_datetime is not None:
         fig.add_trace(go.Scatter(
             x=[stability_reached_datetime],
-            y=[thermal_stability_threshold],
+            y=[msp.thermal_stability_threshold],
             mode='markers+text',
             name=f"Stable temperature",
             marker=dict(color='yellow', symbol='circle', size=20),
@@ -127,7 +134,7 @@ if st.sidebar.button("Run Simulation"):
     if safety_reached_datetime is not None:
         fig.add_trace(go.Scatter(
             x=[safety_reached_datetime],
-            y=[thermal_stability_threshold],
+            y=[msp.thermal_stability_threshold],
             mode='markers+text',
             name=f"Safety level reached (Pasteurization)",
             marker=dict(color='green', symbol='circle-dot', size=20),
@@ -174,8 +181,7 @@ if st.sidebar.button("Run Simulation"):
         yaxis=dict(title="Temperature (°C)"),
         legend=dict(title="Legend")
     )
-    
-    # Render the Plotly figure in Streamlit
+
     st.plotly_chart(fig, use_container_width=True)
     
     st.markdown("Simulation parameters here 👉", help=f"```{msp.to_monospace_str()}```")

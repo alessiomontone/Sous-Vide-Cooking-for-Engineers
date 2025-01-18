@@ -13,3 +13,6 @@ git add .
 git commit -m "Release 0.1.2"
 git tag v0.1.2
 git push origin main
+
+git push origin --delete gh-pages
+git subtree push --prefix "docs/build/html" origin gh-pages

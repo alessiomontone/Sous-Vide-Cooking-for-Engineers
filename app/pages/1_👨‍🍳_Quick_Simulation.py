@@ -130,16 +130,16 @@ if st.session_state.get(QUICK_SIMULATION_STEP_STATUS) == QuickSimulationStep.RES
     ))
 
     # Mark the time when the center reaches the threshold, if applicable
-    if stability_reached_datetime is not None:
-        fig.add_trace(go.Scatter(
-            x=[stability_reached_datetime],
-            y=[msp.thermal_stability_threshold],
-            mode='markers+text',
-            name=f"Stable temperature",
-            marker=dict(color='yellow', symbol='circle', size=20),
-            text=f"<b>{stability_reached_datetime:%H:%M}</b>",
-            textposition="bottom center"
-        ))
+    # if stability_reached_datetime is not None:
+    #     fig.add_trace(go.Scatter(
+    #         x=[stability_reached_datetime],
+    #         y=[msp.thermal_stability_threshold],
+    #         mode='markers+text',
+    #         name=f"Stable temperature",
+    #         marker=dict(color='yellow', symbol='circle', size=20),
+    #         text=f"<b>{stability_reached_datetime:%H:%M}</b>",
+    #         textposition="bottom center"
+    #     ))
         
     # Mark the time when the safety level is reached, if applicable
     if safety_reached_datetime is not None:
@@ -195,7 +195,7 @@ if st.session_state.get(QUICK_SIMULATION_STEP_STATUS) == QuickSimulationStep.RES
             # title="Legend",
             orientation="h",  # Horizontal orientation
             x=0.5,           # Center horizontally
-            y=1.15,          # Position above the plot
+            y=1.1,          # Position above the plot
             xanchor="center", # Anchor horizontally to the center
             bgcolor="rgba(0, 0, 0, 0)"  # Transparent background
         ),

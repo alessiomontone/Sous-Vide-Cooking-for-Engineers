@@ -14,6 +14,6 @@ _Thermophysical Properties of Meat Products: General Bibliography and Experiment
 * `docker build --pull --rm -f "Dockerfile" -t sousvidecooking4eng:latest "."`
 * `docker run -p 8501:8501 sousvidecooking4eng:latest`
 
-## Details
+## Full Documentation
 Further details, including mathematical continuous and discrete formalization, can be find in the documentaion
-Mathematical details besides the implementation is provided in the [documentation](docs/build/html/index.html)
+Mathematical details besides the implementation is provided in the [Full Documentation](https://alessiomontone.github.io/Sous-Vide-Cooking-for-Engineers)

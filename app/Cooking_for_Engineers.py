@@ -11,7 +11,7 @@ st.set_page_config(
     page_icon="♨️",
 )
 
-st.write("#Sous Vide simulation tool")
+st.write("# Sous Vide simulation tool")
 
 st.markdown("""
             

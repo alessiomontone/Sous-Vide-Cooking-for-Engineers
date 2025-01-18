@@ -1,11 +1,18 @@
 from datetime import timedelta
 from datetime import datetime
+import pandas as pd
 import streamlit as st
 
 class MeasurementFormat:
     TIMESTAMP = "Time (mins)"
     TEMPERATURE = "Temperature (°C)"
 
+def GetEmptyMeasurementDataFrame() -> pd.DataFrame:
+    """Return an empty measurement DataFrame with default columns."""
+    return pd.DataFrame({
+        MeasurementFormat.TIMESTAMP: [0],  # Default timestamp placeholder
+        MeasurementFormat.TEMPERATURE: [0.0],      # Default temperature placeholder
+    })
 
 def seconds_to_hhmm(seconds: int) -> str:
     """Convert seconds to a string in HH:MM format."""

@@ -6,6 +6,12 @@ from matplotlib.colors import Normalize
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 
+# Allow acces to the models 
+import sys
+from pathlib import Path
+# Add the parent directory to the sys.path
+sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
+
 from models.parameters import MeatSimulationParameters, LOG_REDUCTION_MIN_THRESHOLD
 from models.solvers import SimulateMeat
 from models.solvers import LogReduction

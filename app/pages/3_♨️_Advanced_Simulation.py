@@ -5,6 +5,12 @@ from matplotlib.colors import Normalize
 import plotly.graph_objects as go
 from datetime import datetime
 
+# Allow acces to the models 
+import sys
+from pathlib import Path
+# Add the parent directory to the sys.path
+sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
+
 from models.solvers import SimulateMeat
 from models.solvers import LogReduction
 from models.helpers import seconds_to_hhmm_pretty, update_progress_bar
@@ -17,7 +23,7 @@ st.set_page_config(
     page_icon="♨️",
 )
 
-st.title("♨️ Advanced Simulation")
+st.title("♨️ Advanced simulation")
 
 intro = st.markdown("""
             Here you can simulate sous vide cooking, by adjusting all the model parameters in the sidebar (👈). \\

@@ -11,6 +11,7 @@ Sous Vide Cooking for Engineers documentation
    :maxdepth: 2
    :caption: Contents:
 
-   introduction
+   userguide
+   codesetup
    maths
 

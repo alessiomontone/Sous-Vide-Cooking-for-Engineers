@@ -45,10 +45,10 @@ if st.button("Help", icon="❓", use_container_width=True, type="tertiary"):
 
 # st.sidebar.success("Select a page from above.")
 
-version_number = "0.2.0 Release Candidate 1"
+version_number = "0.2.1"
 footer_html = f"""
     <div style="position: fixed; bottom: 0; width: 100%; text-align: center; padding: 10px; font-size: 10px;">
-        Sous-vide simulation tool v{version_number} | © Copyright 2025, Alessio Montone
+        Sous-vide simulation tool v{version_number} | © 2025, Alessio Montone
     </div>
 """
 

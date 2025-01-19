@@ -19,7 +19,7 @@ from models.parameters import LOG_REDUCTION_MIN_THRESHOLD
 PASTEURIZATION_MEASUREMENT_STATUS = "CheckPasteurization_Measurements"
 
 st.set_page_config(
-    page_title="Sous Vide simulation tool",
+    page_title="Sous vide simulation tool",
     page_icon="♨️",
 )
 

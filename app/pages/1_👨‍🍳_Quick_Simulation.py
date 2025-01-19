@@ -27,7 +27,7 @@ QUICK_SIMULATION_STEP_STATUS = "QuickSim_Step_Status"
 
 
 st.set_page_config(
-    page_title="Sous Vide simulation tool",
+    page_title="Sous vide simulation tool",
     page_icon="♨️",
 )
 

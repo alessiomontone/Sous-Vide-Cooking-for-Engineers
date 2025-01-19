@@ -1,7 +1,7 @@
 import streamlit as st 
 
 st.set_page_config(
-    page_title="Sous Vide simulation tool",
+    page_title="Sous vide simulation tool",
     page_icon="♨️",
 )
 

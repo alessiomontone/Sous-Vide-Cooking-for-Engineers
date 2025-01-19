@@ -5,6 +5,12 @@ from matplotlib.colors import Normalize
 import plotly.graph_objects as go
 from datetime import time, date, datetime, timedelta
 
+# Allow acces to the models 
+import sys
+from pathlib import Path
+# Add the parent directory to the sys.path
+sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
+
 from models.solvers import SimulateMeat
 from models.solvers import LogReduction
 from models.helpers import update_progress_bar
@@ -25,11 +31,10 @@ st.set_page_config(
     page_icon="♨️",
 )
 
-
 ## Sidebar - Input parameters for the simulation
 ################################################
 if st.session_state.get(QUICK_SIMULATION_STEP_STATUS,QuickSimulationStep.INPUT) == QuickSimulationStep.INPUT:
-    st.title("👨‍🍳 Quick Simulation")
+    st.title("👨‍🍳 Quick simulation")
 
     st.markdown("""
                 Here you can rapidly simulate sous vide cooking, just choose the parameters. \\
@@ -177,11 +182,11 @@ if st.session_state.get(QUICK_SIMULATION_STEP_STATUS) == QuickSimulationStep.RES
     # Update the layout
     fig.update_layout(
         title=dict(
-            text="Temperature int the food center 🎯",
+            text="Temperature in the food center 🎯",
             x=0.5,  # Center the title
             xanchor="center",  # Align the title anchor to the center,
             font=dict(
-                size=24,  # Increase the font size
+                size=20,  # Increase the font size
             )
         ),
         xaxis=dict(

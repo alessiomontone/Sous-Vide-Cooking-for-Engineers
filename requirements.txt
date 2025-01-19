@@ -7,5 +7,6 @@ ipykernel
 openpyxl
 sphinx
 sphinx-rtd-theme
+sphinxcontrib-youtube
 streamlit
 xlsxwriter

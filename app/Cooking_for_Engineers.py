@@ -7,38 +7,50 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 st.set_page_config(
-    page_title="Sous Vide simulation tool",
+    page_title="Sous-vide simulation tool",
     page_icon="♨️",
 )
 
-st.write("# Sous Vide simulation tool")
+st.markdown("""<p style="text-align: center;font-size: 2.75rem; font-weight:bold">Sous-vide simulation tool</p>""",unsafe_allow_html=True,)
 
-st.markdown("""
-            
-            For most users:
-            
-            * **<a href='/Quick_Simulation' target='_self'>🏃 Quick Simulation</a>** would be fine: compute time required to safely sous-vide cook a piece of meat with conservative presets            
-            * **🌡️ Check pasteurization** would be usefult while cooking and collecting real time temperature measurements and evalute pasteurization progress
-            """,unsafe_allow_html=True)
-            
+st.markdown("<br><br>", unsafe_allow_html=True)
+st.markdown("""<p style="text-align: center">Plan in advance cooking time or check progress at cooking time</p>""",unsafe_allow_html=True,)
 
-st.markdown("""
-            
-            Furthermore you may want most advanced functionalities:
-            
-            * **♨️ Advanced Simulation**: if you want to simulate the heat transfer with a full control on parameters and detailed results
-            * **⚙️ Diffusivity Estimation**: if you want to estimate the thermal diffusivity of a piece of meat based on a range of values
-            * **⚙️ Reference tables**: if you want to compute thermal stability/pasteurization time across range of parameters  
-            
-            
-            **References:**
-            
-            The simulation tool is based on the paper by Douglas E. Baldwin, 
-            _Sous vide cooking: A review, International Journal of Gastronomy and Food Science_, 
-            vol. 1(1), pp. 15–30 (2012). [Download PDF](https://douglasbaldwin.com/Baldwin-IJGFS-Preprint.pdf)
+col1, col2 = st.columns(2)
+with col1:
+    if st.button("Quick simulation (in advance)", icon="👨‍🍳", use_container_width=True, help="Compute time required to safely sous-vide cook a piece of meat with conservative presets"):
+        st.switch_page("pages/1_👨‍🍳_Quick_simulation.py")
+with col2:
+    if st.button("Check pasteurization (at cooking time)", icon="🌡️", use_container_width=True, help="At cooking time, collect real time temperature measurements and evalute pasteurization progress"):
+        st.switch_page("pages/2_🌡️_Check_pasteurization.py")
 
-            The Thermal Diffusivity coefficients are taken from Pedro D. Sanz et al., 
-            _Thermophysical Properties of Meat Products: General Bibliography and Experimental Values_ [Download PDF](https://www.researchgate.net/publication/286657774)
-            """)
+st.markdown("<br><br>", unsafe_allow_html=True)
 
-st.sidebar.success("Select a page from above.")
+
+with st.expander ("Advanced functionalities"):
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("Advanced simulation", icon="♨️", use_container_width=True, help="Simulate the heat transfer with a full control on parameters and detailed results"):
+            st.switch_page("pages/3_♨️_Advanced_simulation.py")
+    with col2:
+        if st.button("Diffusivity estimation", icon="⚙️", use_container_width=True, help="Estimate the thermal diffusivity of a piece of meat based on a range of values"):
+            st.switch_page("pages/4_⚙️_Diffusivity_estimation.py")
+    with col3:
+        if st.button("Reference tables", icon="⚙️", use_container_width=True, help="Compute sensitivity of thermal stability/pasteurization time with respect to different parameters"):
+            st.switch_page("pages/5_⚙️_Reference_tables.py")
+
+st.divider()
+if st.button("Help", icon="❓", use_container_width=True, type="tertiary"):
+            st.switch_page("pages/6_❓_Help.py")
+
+# st.sidebar.success("Select a page from above.")
+
+version_number = "0.2.0 Release Candidate 1"
+footer_html = f"""
+    <div style="position: fixed; bottom: 0; width: 100%; text-align: center; padding: 10px; font-size: 10px;">
+        Sous-vide simulation tool v{version_number} | © Copyright 2025, Alessio Montone
+    </div>
+"""
+
+# Inject the footer HTML into the Streamlit app
+st.markdown(footer_html, unsafe_allow_html=True)
